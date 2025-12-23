@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+
 /**
  * Interactive virtual shell CLI
  *
@@ -8,21 +9,20 @@
  * This provides an interactive shell experience using BashEnv's virtual filesystem.
  */
 
-import * as readline from 'readline';
-import * as fs from 'fs';
-import * as path from 'path';
-import { BashEnv } from '../BashEnv.js';
+import * as fs from "node:fs";
+import * as readline from "node:readline";
+import { BashEnv } from "../BashEnv.js";
 
 // ANSI colors
 const colors = {
-  reset: '\x1b[0m',
-  bold: '\x1b[1m',
-  dim: '\x1b[2m',
-  red: '\x1b[31m',
-  green: '\x1b[32m',
-  yellow: '\x1b[33m',
-  blue: '\x1b[34m',
-  cyan: '\x1b[36m',
+  reset: "\x1b[0m",
+  bold: "\x1b[1m",
+  dim: "\x1b[2m",
+  red: "\x1b[31m",
+  green: "\x1b[32m",
+  yellow: "\x1b[33m",
+  blue: "\x1b[34m",
+  cyan: "\x1b[36m",
 };
 
 interface ShellOptions {
@@ -42,19 +42,19 @@ class VirtualShell {
   constructor(options: ShellOptions = {}) {
     // Default files to create a basic environment
     const defaultFiles: Record<string, string> = {
-      '/home/user/.bashrc': '# Virtual shell\nexport PS1="\\u@virtual:\\w$ "\n',
-      '/home/user/.profile': '# User profile\n',
-      '/tmp/.keep': '',
+      "/home/user/.bashrc": '# Virtual shell\nexport PS1="\\u@virtual:\\w$ "\n',
+      "/home/user/.profile": "# User profile\n",
+      "/tmp/.keep": "",
     };
 
     this.env = new BashEnv({
       files: { ...defaultFiles, ...options.files },
-      cwd: options.cwd || '/home/user',
+      cwd: options.cwd || "/home/user",
       env: {
-        HOME: '/home/user',
-        USER: 'user',
-        SHELL: '/bin/bash',
-        TERM: 'xterm-256color',
+        HOME: "/home/user",
+        USER: "user",
+        SHELL: "/bin/bash",
+        TERM: "xterm-256color",
         ...options.env,
       },
     });
@@ -69,16 +69,16 @@ class VirtualShell {
     });
 
     // Handle Ctrl+C
-    this.rl.on('SIGINT', () => {
-      process.stdout.write('^C\n');
+    this.rl.on("SIGINT", () => {
+      process.stdout.write("^C\n");
       this.prompt();
     });
 
     // Handle close (only in interactive mode)
     if (process.stdin.isTTY) {
-      this.rl.on('close', () => {
+      this.rl.on("close", () => {
         this.running = false;
-        console.log('\nGoodbye!');
+        console.log("\nGoodbye!");
         process.exit(0);
       });
     }
@@ -92,14 +92,14 @@ class VirtualShell {
 
   private getPrompt(): string {
     const cwd = this.env.getCwd();
-    const home = this.env.getEnv().HOME || '/home/user';
+    const home = this.env.getEnv().HOME || "/home/user";
 
     // Replace home with ~
     let displayCwd = cwd;
     if (cwd === home) {
-      displayCwd = '~';
-    } else if (cwd.startsWith(home + '/')) {
-      displayCwd = '~' + cwd.slice(home.length);
+      displayCwd = "~";
+    } else if (cwd.startsWith(`${home}/`)) {
+      displayCwd = `~${cwd.slice(home.length)}`;
     }
 
     return `${colors.green}${colors.bold}user@virtual${colors.reset}:${colors.blue}${colors.bold}${displayCwd}${colors.reset}$ `;
@@ -117,14 +117,14 @@ class VirtualShell {
     this.history.push(trimmed);
 
     // Handle shell built-ins that need special treatment
-    if (trimmed === 'exit' || trimmed.startsWith('exit ')) {
+    if (trimmed === "exit" || trimmed.startsWith("exit ")) {
       const parts = trimmed.split(/\s+/);
       const exitCode = parts[1] ? parseInt(parts[1], 10) : 0;
-      console.log('exit');
+      console.log("exit");
       process.exit(exitCode);
     }
 
-    if (trimmed === 'help') {
+    if (trimmed === "help") {
       this.printHelp();
       return;
     }
@@ -222,13 +222,13 @@ All operations run on a virtual in-memory filesystem.
       const lines: string[] = [];
 
       // Collect all lines first
-      this.rl.on('line', (line) => {
+      this.rl.on("line", (line) => {
         lines.push(line);
       });
 
       // Wait for all input to be read
       await new Promise<void>((resolve) => {
-        this.rl.on('close', resolve);
+        this.rl.on("close", resolve);
       });
 
       // Execute commands sequentially
@@ -245,18 +245,18 @@ function parseArgs(): ShellOptions {
   const options: ShellOptions = {};
 
   for (let i = 0; i < args.length; i++) {
-    if (args[i] === '--cwd' && args[i + 1]) {
+    if (args[i] === "--cwd" && args[i + 1]) {
       options.cwd = args[++i];
-    } else if (args[i] === '--files' && args[i + 1]) {
+    } else if (args[i] === "--files" && args[i + 1]) {
       const filePath = args[++i];
       try {
-        const content = fs.readFileSync(filePath, 'utf-8');
+        const content = fs.readFileSync(filePath, "utf-8");
         options.files = JSON.parse(content);
       } catch (error) {
         console.error(`Error reading files from ${filePath}:`, error);
         process.exit(1);
       }
-    } else if (args[i] === '--help' || args[i] === '-h') {
+    } else if (args[i] === "--help" || args[i] === "-h") {
       console.log(`
 Usage: npx tsx src/cli/shell.ts [options]
 

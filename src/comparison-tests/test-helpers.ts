@@ -1,9 +1,9 @@
-import { BashEnv } from '../BashEnv.js';
-import { exec } from 'child_process';
-import { promisify } from 'util';
-import * as fs from 'fs/promises';
-import * as path from 'path';
-import * as os from 'os';
+import { exec } from "node:child_process";
+import * as fs from "node:fs/promises";
+import * as os from "node:os";
+import * as path from "node:path";
+import { promisify } from "node:util";
+import { BashEnv } from "../BashEnv.js";
 
 export const execAsync = promisify(exec);
 
@@ -13,7 +13,7 @@ export const execAsync = promisify(exec);
 export async function createTestDir(): Promise<string> {
   const testDir = path.join(
     os.tmpdir(),
-    `bashenv-test-${Date.now()}-${Math.random().toString(36).slice(2)}`
+    `bashenv-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
   );
   await fs.mkdir(testDir, { recursive: true });
   return testDir;
@@ -35,7 +35,7 @@ export async function cleanupTestDir(testDir: string): Promise<void> {
  */
 export async function setupFiles(
   testDir: string,
-  files: Record<string, string>
+  files: Record<string, string>,
 ): Promise<BashEnv> {
   // Create files in real FS
   for (const [filePath, content] of Object.entries(files)) {
@@ -61,16 +61,19 @@ export async function setupFiles(
  */
 export async function runRealBash(
   command: string,
-  cwd: string
+  cwd: string,
 ): Promise<{ stdout: string; stderr: string; exitCode: number }> {
   try {
-    const { stdout, stderr } = await execAsync(command, { cwd, shell: '/bin/bash' });
+    const { stdout, stderr } = await execAsync(command, {
+      cwd,
+      shell: "/bin/bash",
+    });
     return { stdout, stderr, exitCode: 0 };
   } catch (error: unknown) {
     const err = error as { stdout?: string; stderr?: string; code?: number };
     return {
-      stdout: err.stdout || '',
-      stderr: err.stderr || '',
+      stdout: err.stdout || "",
+      stderr: err.stderr || "",
       exitCode: err.code || 1,
     };
   }
@@ -83,7 +86,7 @@ export async function compareOutputs(
   env: BashEnv,
   testDir: string,
   command: string,
-  options?: { compareStderr?: boolean; compareExitCode?: boolean }
+  options?: { compareStderr?: boolean; compareExitCode?: boolean },
 ): Promise<void> {
   const [bashEnvResult, realBashResult] = await Promise.all([
     env.exec(command),
@@ -94,7 +97,7 @@ export async function compareOutputs(
     throw new Error(
       `stdout mismatch for "${command}"\n` +
         `Expected (real bash): ${JSON.stringify(realBashResult.stdout)}\n` +
-        `Received (BashEnv):   ${JSON.stringify(bashEnvResult.stdout)}`
+        `Received (BashEnv):   ${JSON.stringify(bashEnvResult.stdout)}`,
     );
   }
 
@@ -103,7 +106,7 @@ export async function compareOutputs(
       throw new Error(
         `exitCode mismatch for "${command}"\n` +
           `Expected (real bash): ${realBashResult.exitCode}\n` +
-          `Received (BashEnv):   ${bashEnvResult.exitCode}`
+          `Received (BashEnv):   ${bashEnvResult.exitCode}`,
       );
     }
   }

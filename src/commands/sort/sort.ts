@@ -1,8 +1,8 @@
-import { Command, CommandContext, ExecResult } from '../../types.js';
-import { unknownOption } from '../help.js';
+import type { Command, CommandContext, ExecResult } from "../../types.js";
+import { unknownOption } from "../help.js";
 
 export const sortCommand: Command = {
-  name: 'sort',
+  name: "sort",
   async execute(args: string[], ctx: CommandContext): Promise<ExecResult> {
     let reverse = false;
     let numeric = false;
@@ -14,45 +14,45 @@ export const sortCommand: Command = {
     // Parse arguments
     for (let i = 0; i < args.length; i++) {
       const arg = args[i];
-      if (arg === '-r' || arg === '--reverse') {
+      if (arg === "-r" || arg === "--reverse") {
         reverse = true;
-      } else if (arg === '-n' || arg === '--numeric-sort') {
+      } else if (arg === "-n" || arg === "--numeric-sort") {
         numeric = true;
-      } else if (arg === '-u' || arg === '--unique') {
+      } else if (arg === "-u" || arg === "--unique") {
         unique = true;
-      } else if (arg === '-t' || arg === '--field-separator') {
+      } else if (arg === "-t" || arg === "--field-separator") {
         fieldDelimiter = args[++i] || null;
-      } else if (arg.startsWith('-t')) {
+      } else if (arg.startsWith("-t")) {
         fieldDelimiter = arg.slice(2) || null;
-      } else if (arg === '-k' || arg === '--key') {
+      } else if (arg === "-k" || arg === "--key") {
         const keyArg = args[++i];
         if (keyArg) {
           const keyNum = parseInt(keyArg, 10);
-          if (!isNaN(keyNum) && keyNum >= 1) {
+          if (!Number.isNaN(keyNum) && keyNum >= 1) {
             keyField = keyNum;
           }
         }
-      } else if (arg.startsWith('-k')) {
+      } else if (arg.startsWith("-k")) {
         const keyNum = parseInt(arg.slice(2), 10);
-        if (!isNaN(keyNum) && keyNum >= 1) {
+        if (!Number.isNaN(keyNum) && keyNum >= 1) {
           keyField = keyNum;
         }
-      } else if (arg.startsWith('--')) {
-        return unknownOption('sort', arg);
-      } else if (arg.startsWith('-') && !arg.startsWith('--')) {
+      } else if (arg.startsWith("--")) {
+        return unknownOption("sort", arg);
+      } else if (arg.startsWith("-") && !arg.startsWith("--")) {
         // Handle combined flags like -rn
         for (const char of arg.slice(1)) {
-          if (char === 'r') reverse = true;
-          else if (char === 'n') numeric = true;
-          else if (char === 'u') unique = true;
-          else return unknownOption('sort', `-${char}`);
+          if (char === "r") reverse = true;
+          else if (char === "n") numeric = true;
+          else if (char === "u") unique = true;
+          else return unknownOption("sort", `-${char}`);
         }
       } else {
         files.push(arg);
       }
     }
 
-    let content = '';
+    let content = "";
 
     // Read from files or stdin
     if (files.length === 0) {
@@ -64,7 +64,7 @@ export const sortCommand: Command = {
           content += await ctx.fs.readFile(filePath);
         } catch {
           return {
-            stdout: '',
+            stdout: "",
             stderr: `sort: ${file}: No such file or directory\n`,
             exitCode: 1,
           };
@@ -73,10 +73,10 @@ export const sortCommand: Command = {
     }
 
     // Split into lines (preserve empty lines at the end for sorting)
-    let lines = content.split('\n');
+    let lines = content.split("\n");
 
     // Remove last empty element if content ends with newline
-    if (lines.length > 0 && lines[lines.length - 1] === '') {
+    if (lines.length > 0 && lines[lines.length - 1] === "") {
       lines.pop();
     }
 
@@ -90,8 +90,8 @@ export const sortCommand: Command = {
         const splitPattern = fieldDelimiter !== null ? fieldDelimiter : /\s+/;
         const partsA = a.split(splitPattern);
         const partsB = b.split(splitPattern);
-        valA = partsA[keyField - 1] || '';
-        valB = partsB[keyField - 1] || '';
+        valA = partsA[keyField - 1] || "";
+        valB = partsB[keyField - 1] || "";
       }
 
       if (numeric) {
@@ -112,7 +112,7 @@ export const sortCommand: Command = {
       lines = [...new Set(lines)];
     }
 
-    const output = lines.length > 0 ? lines.join('\n') + '\n' : '';
-    return { stdout: output, stderr: '', exitCode: 0 };
+    const output = lines.length > 0 ? `${lines.join("\n")}\n` : "";
+    return { stdout: output, stderr: "", exitCode: 0 };
   },
 };

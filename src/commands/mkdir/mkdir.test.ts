@@ -1,99 +1,101 @@
-import { describe, it, expect } from 'vitest';
-import { BashEnv } from '../../BashEnv.js';
+import { describe, expect, it } from "vitest";
+import { BashEnv } from "../../BashEnv.js";
 
-describe('mkdir', () => {
-  it('should create directory', async () => {
-    const env = new BashEnv({ cwd: '/' });
-    const result = await env.exec('mkdir /newdir');
-    expect(result.stdout).toBe('');
-    expect(result.stderr).toBe('');
+describe("mkdir", () => {
+  it("should create directory", async () => {
+    const env = new BashEnv({ cwd: "/" });
+    const result = await env.exec("mkdir /newdir");
+    expect(result.stdout).toBe("");
+    expect(result.stderr).toBe("");
     expect(result.exitCode).toBe(0);
-    const ls = await env.exec('ls /');
-    expect(ls.stdout).toBe('newdir\n');
+    const ls = await env.exec("ls /");
+    expect(ls.stdout).toBe("newdir\n");
   });
 
-  it('should create multiple directories', async () => {
-    const env = new BashEnv({ cwd: '/' });
-    await env.exec('mkdir /dir1 /dir2 /dir3');
-    const ls = await env.exec('ls /');
-    expect(ls.stdout).toBe('dir1\ndir2\ndir3\n');
+  it("should create multiple directories", async () => {
+    const env = new BashEnv({ cwd: "/" });
+    await env.exec("mkdir /dir1 /dir2 /dir3");
+    const ls = await env.exec("ls /");
+    expect(ls.stdout).toBe("dir1\ndir2\ndir3\n");
   });
 
-  it('should create nested directories with -p', async () => {
+  it("should create nested directories with -p", async () => {
     const env = new BashEnv();
-    const result = await env.exec('mkdir -p /a/b/c');
-    expect(result.stdout).toBe('');
-    expect(result.stderr).toBe('');
+    const result = await env.exec("mkdir -p /a/b/c");
+    expect(result.stdout).toBe("");
+    expect(result.stderr).toBe("");
     expect(result.exitCode).toBe(0);
-    const ls = await env.exec('ls /a/b');
-    expect(ls.stdout).toBe('c\n');
+    const ls = await env.exec("ls /a/b");
+    expect(ls.stdout).toBe("c\n");
   });
 
-  it('should create deeply nested directories with -p', async () => {
+  it("should create deeply nested directories with -p", async () => {
     const env = new BashEnv();
-    await env.exec('mkdir -p /one/two/three/four/five');
-    const ls = await env.exec('ls /one/two/three/four');
-    expect(ls.stdout).toBe('five\n');
+    await env.exec("mkdir -p /one/two/three/four/five");
+    const ls = await env.exec("ls /one/two/three/four");
+    expect(ls.stdout).toBe("five\n");
   });
 
-  it('should create nested directories with --parents', async () => {
+  it("should create nested directories with --parents", async () => {
     const env = new BashEnv();
-    await env.exec('mkdir --parents /x/y/z');
-    const ls = await env.exec('ls /x/y');
-    expect(ls.stdout).toBe('z\n');
+    await env.exec("mkdir --parents /x/y/z");
+    const ls = await env.exec("ls /x/y");
+    expect(ls.stdout).toBe("z\n");
   });
 
-  it('should fail without -p for nested dirs', async () => {
+  it("should fail without -p for nested dirs", async () => {
     const env = new BashEnv();
-    const result = await env.exec('mkdir /a/b/c');
-    expect(result.stdout).toBe('');
-    expect(result.stderr).toBe("mkdir: cannot create directory '/a/b/c': No such file or directory\n");
+    const result = await env.exec("mkdir /a/b/c");
+    expect(result.stdout).toBe("");
+    expect(result.stderr).toBe(
+      "mkdir: cannot create directory '/a/b/c': No such file or directory\n",
+    );
     expect(result.exitCode).toBe(1);
   });
 
-  it('should not error if directory exists with -p', async () => {
+  it("should not error if directory exists with -p", async () => {
     const env = new BashEnv({
-      files: { '/existing/file.txt': '' },
+      files: { "/existing/file.txt": "" },
     });
-    const result = await env.exec('mkdir -p /existing');
-    expect(result.stdout).toBe('');
-    expect(result.stderr).toBe('');
+    const result = await env.exec("mkdir -p /existing");
+    expect(result.stdout).toBe("");
+    expect(result.stderr).toBe("");
     expect(result.exitCode).toBe(0);
   });
 
-  it('should error if file exists at path', async () => {
+  it("should error if file exists at path", async () => {
     const env = new BashEnv({
-      files: { '/file': 'content' },
+      files: { "/file": "content" },
     });
-    const result = await env.exec('mkdir /file');
-    expect(result.stdout).toBe('');
+    const result = await env.exec("mkdir /file");
+    expect(result.stdout).toBe("");
     expect(result.exitCode).toBe(1);
   });
 
-  it('should error with no arguments', async () => {
+  it("should error with no arguments", async () => {
     const env = new BashEnv();
-    const result = await env.exec('mkdir');
-    expect(result.stdout).toBe('');
-    expect(result.stderr).toBe('mkdir: missing operand\n');
+    const result = await env.exec("mkdir");
+    expect(result.stdout).toBe("");
+    expect(result.stderr).toBe("mkdir: missing operand\n");
     expect(result.exitCode).toBe(1);
   });
 
-  it('should create directory with relative path', async () => {
+  it("should create directory with relative path", async () => {
     const env = new BashEnv({
-      files: { '/home/user/.keep': '' },
-      cwd: '/home/user',
+      files: { "/home/user/.keep": "" },
+      cwd: "/home/user",
     });
-    await env.exec('mkdir projects');
-    const ls = await env.exec('ls /home/user');
-    expect(ls.stdout).toBe('projects\n');
+    await env.exec("mkdir projects");
+    const ls = await env.exec("ls /home/user");
+    expect(ls.stdout).toBe("projects\n");
   });
 
-  it('should create multiple nested paths with -p', async () => {
+  it("should create multiple nested paths with -p", async () => {
     const env = new BashEnv();
-    await env.exec('mkdir -p /a/b /c/d');
-    const lsA = await env.exec('ls /a');
-    const lsC = await env.exec('ls /c');
-    expect(lsA.stdout).toBe('b\n');
-    expect(lsC.stdout).toBe('d\n');
+    await env.exec("mkdir -p /a/b /c/d");
+    const lsA = await env.exec("ls /a");
+    const lsC = await env.exec("ls /c");
+    expect(lsA.stdout).toBe("b\n");
+    expect(lsC.stdout).toBe("d\n");
   });
 });

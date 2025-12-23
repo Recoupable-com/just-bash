@@ -1,7 +1,12 @@
-import { describe, it, beforeEach, afterEach } from 'vitest';
-import { createTestDir, cleanupTestDir, setupFiles, compareOutputs } from './test-helpers.js';
+import { afterEach, beforeEach, describe, it } from "vitest";
+import {
+  cleanupTestDir,
+  compareOutputs,
+  createTestDir,
+  setupFiles,
+} from "./test-helpers.js";
 
-describe('cut command - Real Bash Comparison', () => {
+describe("cut command - Real Bash Comparison", () => {
   let testDir: string;
 
   beforeEach(async () => {
@@ -12,126 +17,126 @@ describe('cut command - Real Bash Comparison', () => {
     await cleanupTestDir(testDir);
   });
 
-  describe('-d and -f (delimiter and field)', () => {
-    it('should cut first field with colon delimiter', async () => {
+  describe("-d and -f (delimiter and field)", () => {
+    it("should cut first field with colon delimiter", async () => {
       const env = await setupFiles(testDir, {
-        'test.txt': 'a:b:c\nd:e:f\ng:h:i\n',
+        "test.txt": "a:b:c\nd:e:f\ng:h:i\n",
       });
-      await compareOutputs(env, testDir, 'cut -d: -f1 test.txt');
+      await compareOutputs(env, testDir, "cut -d: -f1 test.txt");
     });
 
-    it('should cut second field', async () => {
+    it("should cut second field", async () => {
       const env = await setupFiles(testDir, {
-        'test.txt': 'a:b:c\nd:e:f\ng:h:i\n',
+        "test.txt": "a:b:c\nd:e:f\ng:h:i\n",
       });
-      await compareOutputs(env, testDir, 'cut -d: -f2 test.txt');
+      await compareOutputs(env, testDir, "cut -d: -f2 test.txt");
     });
 
-    it('should cut third field', async () => {
+    it("should cut third field", async () => {
       const env = await setupFiles(testDir, {
-        'test.txt': 'a:b:c\nd:e:f\ng:h:i\n',
+        "test.txt": "a:b:c\nd:e:f\ng:h:i\n",
       });
-      await compareOutputs(env, testDir, 'cut -d: -f3 test.txt');
+      await compareOutputs(env, testDir, "cut -d: -f3 test.txt");
     });
 
-    it('should cut multiple fields', async () => {
+    it("should cut multiple fields", async () => {
       const env = await setupFiles(testDir, {
-        'test.txt': 'a:b:c:d\ne:f:g:h\n',
+        "test.txt": "a:b:c:d\ne:f:g:h\n",
       });
-      await compareOutputs(env, testDir, 'cut -d: -f1,3 test.txt');
+      await compareOutputs(env, testDir, "cut -d: -f1,3 test.txt");
     });
 
-    it('should cut field range', async () => {
+    it("should cut field range", async () => {
       const env = await setupFiles(testDir, {
-        'test.txt': 'a:b:c:d\ne:f:g:h\n',
+        "test.txt": "a:b:c:d\ne:f:g:h\n",
       });
-      await compareOutputs(env, testDir, 'cut -d: -f2-4 test.txt');
+      await compareOutputs(env, testDir, "cut -d: -f2-4 test.txt");
     });
 
-    it('should handle tab delimiter', async () => {
+    it("should handle tab delimiter", async () => {
       const env = await setupFiles(testDir, {
-        'test.txt': 'a\tb\tc\nd\te\tf\n',
+        "test.txt": "a\tb\tc\nd\te\tf\n",
       });
-      await compareOutputs(env, testDir, 'cut -f1 test.txt');
+      await compareOutputs(env, testDir, "cut -f1 test.txt");
     });
 
-    it('should handle comma delimiter', async () => {
+    it("should handle comma delimiter", async () => {
       const env = await setupFiles(testDir, {
-        'test.txt': 'a,b,c\nd,e,f\n',
+        "test.txt": "a,b,c\nd,e,f\n",
       });
-      await compareOutputs(env, testDir, 'cut -d, -f2 test.txt');
+      await compareOutputs(env, testDir, "cut -d, -f2 test.txt");
     });
 
-    it('should handle space delimiter', async () => {
+    it("should handle space delimiter", async () => {
       const env = await setupFiles(testDir, {
-        'test.txt': 'one two three\nfour five six\n',
+        "test.txt": "one two three\nfour five six\n",
       });
       await compareOutputs(env, testDir, 'cut -d" " -f2 test.txt');
     });
   });
 
-  describe('-c (characters)', () => {
-    it('should cut single character', async () => {
+  describe("-c (characters)", () => {
+    it("should cut single character", async () => {
       const env = await setupFiles(testDir, {
-        'test.txt': 'abcdefghij\n1234567890\n',
+        "test.txt": "abcdefghij\n1234567890\n",
       });
-      await compareOutputs(env, testDir, 'cut -c1 test.txt');
+      await compareOutputs(env, testDir, "cut -c1 test.txt");
     });
 
-    it('should cut character range', async () => {
+    it("should cut character range", async () => {
       const env = await setupFiles(testDir, {
-        'test.txt': 'abcdefghij\n1234567890\n',
+        "test.txt": "abcdefghij\n1234567890\n",
       });
-      await compareOutputs(env, testDir, 'cut -c1-5 test.txt');
+      await compareOutputs(env, testDir, "cut -c1-5 test.txt");
     });
 
-    it('should cut multiple characters', async () => {
+    it("should cut multiple characters", async () => {
       const env = await setupFiles(testDir, {
-        'test.txt': 'abcdefghij\n1234567890\n',
+        "test.txt": "abcdefghij\n1234567890\n",
       });
-      await compareOutputs(env, testDir, 'cut -c1,3,5 test.txt');
+      await compareOutputs(env, testDir, "cut -c1,3,5 test.txt");
     });
 
-    it('should cut from character to end', async () => {
+    it("should cut from character to end", async () => {
       const env = await setupFiles(testDir, {
-        'test.txt': 'abcdefghij\n1234567890\n',
+        "test.txt": "abcdefghij\n1234567890\n",
       });
-      await compareOutputs(env, testDir, 'cut -c5- test.txt');
+      await compareOutputs(env, testDir, "cut -c5- test.txt");
     });
 
-    it('should cut from start to character', async () => {
+    it("should cut from start to character", async () => {
       const env = await setupFiles(testDir, {
-        'test.txt': 'abcdefghij\n1234567890\n',
+        "test.txt": "abcdefghij\n1234567890\n",
       });
-      await compareOutputs(env, testDir, 'cut -c-5 test.txt');
+      await compareOutputs(env, testDir, "cut -c-5 test.txt");
     });
   });
 
-  describe('stdin', () => {
-    it('should read from stdin', async () => {
+  describe("stdin", () => {
+    it("should read from stdin", async () => {
       const env = await setupFiles(testDir, {});
       await compareOutputs(env, testDir, 'echo "a:b:c" | cut -d: -f2');
     });
 
-    it('should cut characters from stdin', async () => {
+    it("should cut characters from stdin", async () => {
       const env = await setupFiles(testDir, {});
       await compareOutputs(env, testDir, 'echo "hello" | cut -c1-3');
     });
   });
 
-  describe('edge cases', () => {
-    it('should handle missing field', async () => {
+  describe("edge cases", () => {
+    it("should handle missing field", async () => {
       const env = await setupFiles(testDir, {
-        'test.txt': 'a:b\nc:d:e\n',
+        "test.txt": "a:b\nc:d:e\n",
       });
-      await compareOutputs(env, testDir, 'cut -d: -f3 test.txt');
+      await compareOutputs(env, testDir, "cut -d: -f3 test.txt");
     });
 
-    it('should handle empty fields', async () => {
+    it("should handle empty fields", async () => {
       const env = await setupFiles(testDir, {
-        'test.txt': 'a::c\n:b:\n',
+        "test.txt": "a::c\n:b:\n",
       });
-      await compareOutputs(env, testDir, 'cut -d: -f2 test.txt');
+      await compareOutputs(env, testDir, "cut -d: -f2 test.txt");
     });
   });
 });

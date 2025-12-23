@@ -1,21 +1,19 @@
-import { Command, CommandContext, ExecResult } from '../../types.js';
-import { hasHelpFlag, showHelp } from '../help.js';
+import type { Command, CommandContext, ExecResult } from "../../types.js";
+import { hasHelpFlag, showHelp } from "../help.js";
 
 const aliasHelp = {
-  name: 'alias',
-  summary: 'define or display aliases',
-  usage: 'alias [name[=value] ...]',
-  options: [
-    '    --help display this help and exit',
-  ],
+  name: "alias",
+  summary: "define or display aliases",
+  usage: "alias [name[=value] ...]",
+  options: ["    --help display this help and exit"],
 };
 
 // Aliases are stored in the environment
 // Format: BASH_ALIASES_<name>=<value>
-const ALIAS_PREFIX = 'BASH_ALIAS_';
+const ALIAS_PREFIX = "BASH_ALIAS_";
 
 export const aliasCommand: Command = {
-  name: 'alias',
+  name: "alias",
 
   async execute(args: string[], ctx: CommandContext): Promise<ExecResult> {
     if (hasHelpFlag(args)) {
@@ -24,76 +22,90 @@ export const aliasCommand: Command = {
 
     // No arguments: list all aliases
     if (args.length === 0) {
-      let stdout = '';
+      let stdout = "";
       for (const [key, value] of Object.entries(ctx.env)) {
         if (key.startsWith(ALIAS_PREFIX)) {
           const name = key.slice(ALIAS_PREFIX.length);
           stdout += `alias ${name}='${value}'\n`;
         }
       }
-      return { stdout, stderr: '', exitCode: 0 };
+      return { stdout, stderr: "", exitCode: 0 };
     }
 
     // Process alias definitions
     for (const arg of args) {
-      const eqIdx = arg.indexOf('=');
+      const eqIdx = arg.indexOf("=");
       if (eqIdx === -1) {
         // Show single alias
         const key = ALIAS_PREFIX + arg;
         if (ctx.env[key]) {
-          return { stdout: `alias ${arg}='${ctx.env[key]}'\n`, stderr: '', exitCode: 0 };
+          return {
+            stdout: `alias ${arg}='${ctx.env[key]}'\n`,
+            stderr: "",
+            exitCode: 0,
+          };
         } else {
-          return { stdout: '', stderr: `alias: ${arg}: not found\n`, exitCode: 1 };
+          return {
+            stdout: "",
+            stderr: `alias: ${arg}: not found\n`,
+            exitCode: 1,
+          };
         }
       } else {
         // Set alias
         const name = arg.slice(0, eqIdx);
         let value = arg.slice(eqIdx + 1);
         // Remove quotes if present
-        if ((value.startsWith("'") && value.endsWith("'")) ||
-            (value.startsWith('"') && value.endsWith('"'))) {
+        if (
+          (value.startsWith("'") && value.endsWith("'")) ||
+          (value.startsWith('"') && value.endsWith('"'))
+        ) {
           value = value.slice(1, -1);
         }
         ctx.env[ALIAS_PREFIX + name] = value;
       }
     }
 
-    return { stdout: '', stderr: '', exitCode: 0 };
+    return { stdout: "", stderr: "", exitCode: 0 };
   },
 };
 
 export const unaliasCommand: Command = {
-  name: 'unalias',
+  name: "unalias",
 
   async execute(args: string[], ctx: CommandContext): Promise<ExecResult> {
     if (hasHelpFlag(args)) {
       return showHelp({
-        name: 'unalias',
-        summary: 'remove alias definitions',
-        usage: 'unalias name [name ...]',
+        name: "unalias",
+        summary: "remove alias definitions",
+        usage: "unalias name [name ...]",
         options: [
-          '-a      remove all aliases',
-          '    --help display this help and exit',
+          "-a      remove all aliases",
+          "    --help display this help and exit",
         ],
       });
     }
 
     if (args.length === 0) {
-      return { stdout: '', stderr: 'unalias: usage: unalias [-a] name [name ...]\n', exitCode: 1 };
+      return {
+        stdout: "",
+        stderr: "unalias: usage: unalias [-a] name [name ...]\n",
+        exitCode: 1,
+      };
     }
 
     // Handle -a to remove all aliases
-    if (args[0] === '-a') {
+    if (args[0] === "-a") {
       for (const key of Object.keys(ctx.env)) {
         if (key.startsWith(ALIAS_PREFIX)) {
           delete ctx.env[key];
         }
       }
-      return { stdout: '', stderr: '', exitCode: 0 };
+      return { stdout: "", stderr: "", exitCode: 0 };
     }
 
     let anyError = false;
-    let stderr = '';
+    let stderr = "";
     for (const name of args) {
       const key = ALIAS_PREFIX + name;
       if (ctx.env[key]) {
@@ -104,11 +116,14 @@ export const unaliasCommand: Command = {
       }
     }
 
-    return { stdout: '', stderr, exitCode: anyError ? 1 : 0 };
+    return { stdout: "", stderr, exitCode: anyError ? 1 : 0 };
   },
 };
 
 // Helper to check if a command is aliased (called from BashEnv)
-export function getAlias(env: Record<string, string>, name: string): string | undefined {
+export function getAlias(
+  env: Record<string, string>,
+  name: string,
+): string | undefined {
   return env[ALIAS_PREFIX + name];
 }

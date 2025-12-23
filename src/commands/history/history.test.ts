@@ -1,54 +1,54 @@
-import { describe, it, expect } from 'vitest';
-import { BashEnv } from '../../BashEnv.js';
+import { describe, expect, it } from "vitest";
+import { BashEnv } from "../../BashEnv.js";
 
-describe('history command', () => {
-  it('should show empty history initially', async () => {
+describe("history command", () => {
+  it("should show empty history initially", async () => {
     const env = new BashEnv();
-    const result = await env.exec('history');
+    const result = await env.exec("history");
     // History is empty at start
     expect(result.exitCode).toBe(0);
   });
 
-  it('should show help with --help', async () => {
+  it("should show help with --help", async () => {
     const env = new BashEnv();
-    const result = await env.exec('history --help');
-    expect(result.stdout).toContain('history');
-    expect(result.stdout).toContain('command history');
+    const result = await env.exec("history --help");
+    expect(result.stdout).toContain("history");
+    expect(result.stdout).toContain("command history");
     expect(result.exitCode).toBe(0);
   });
 
-  it('should clear history with -c', async () => {
+  it("should clear history with -c", async () => {
     const env = new BashEnv({
-      env: { BASH_HISTORY: '["echo hello","ls -la"]' }
+      env: { BASH_HISTORY: '["echo hello","ls -la"]' },
     });
-    const result = await env.exec('history -c');
+    const result = await env.exec("history -c");
     expect(result.exitCode).toBe(0);
 
     // Verify history is cleared
-    const historyResult = await env.exec('history');
-    expect(historyResult.stdout).toBe('');
+    const historyResult = await env.exec("history");
+    expect(historyResult.stdout).toBe("");
   });
 
-  it('should display history with line numbers', async () => {
+  it("should display history with line numbers", async () => {
     const env = new BashEnv({
-      env: { BASH_HISTORY: '["echo hello","ls -la"]' }
+      env: { BASH_HISTORY: '["echo hello","ls -la"]' },
     });
-    const result = await env.exec('history');
-    expect(result.stdout).toContain('1');
-    expect(result.stdout).toContain('echo hello');
-    expect(result.stdout).toContain('2');
-    expect(result.stdout).toContain('ls -la');
+    const result = await env.exec("history");
+    expect(result.stdout).toContain("1");
+    expect(result.stdout).toContain("echo hello");
+    expect(result.stdout).toContain("2");
+    expect(result.stdout).toContain("ls -la");
     expect(result.exitCode).toBe(0);
   });
 
-  it('should limit output with numeric argument', async () => {
+  it("should limit output with numeric argument", async () => {
     const env = new BashEnv({
-      env: { BASH_HISTORY: '["cmd1","cmd2","cmd3","cmd4","cmd5"]' }
+      env: { BASH_HISTORY: '["cmd1","cmd2","cmd3","cmd4","cmd5"]' },
     });
-    const result = await env.exec('history 2');
-    expect(result.stdout).toContain('cmd4');
-    expect(result.stdout).toContain('cmd5');
-    expect(result.stdout).not.toContain('cmd1');
+    const result = await env.exec("history 2");
+    expect(result.stdout).toContain("cmd4");
+    expect(result.stdout).toContain("cmd5");
+    expect(result.stdout).not.toContain("cmd1");
     expect(result.exitCode).toBe(0);
   });
 });

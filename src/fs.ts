@@ -1,17 +1,24 @@
-import {
-  IFileSystem,
+import type {
+  CpOptions,
+  DirectoryEntry,
+  FileEntry,
   FsEntry,
+  FsStat,
+  IFileSystem,
+  MkdirOptions,
+  RmOptions,
+  SymlinkEntry,
+} from "./fs-interface.js";
+
+// Re-export for backwards compatibility
+export type {
   FileEntry,
   DirectoryEntry,
   SymlinkEntry,
+  FsEntry,
   FsStat,
-  MkdirOptions,
-  RmOptions,
-  CpOptions,
-} from './fs-interface.js';
-
-// Re-export for backwards compatibility
-export type { FileEntry, DirectoryEntry, SymlinkEntry, FsEntry, FsStat, IFileSystem };
+  IFileSystem,
+};
 
 export interface FsData {
   [path: string]: FsEntry;
@@ -22,7 +29,7 @@ export class VirtualFs implements IFileSystem {
 
   constructor(initialFiles?: Record<string, string>) {
     // Create root directory
-    this.data.set('/', { type: 'directory', mode: 0o755, mtime: new Date() });
+    this.data.set("/", { type: "directory", mode: 0o755, mtime: new Date() });
 
     if (initialFiles) {
       for (const [path, content] of Object.entries(initialFiles)) {
@@ -33,53 +40,46 @@ export class VirtualFs implements IFileSystem {
 
   private normalizePath(path: string): string {
     // Handle empty or just slash
-    if (!path || path === '/') return '/';
+    if (!path || path === "/") return "/";
 
     // Remove trailing slash
-    let normalized = path.endsWith('/') && path !== '/'
-      ? path.slice(0, -1)
-      : path;
+    let normalized =
+      path.endsWith("/") && path !== "/" ? path.slice(0, -1) : path;
 
     // Ensure starts with /
-    if (!normalized.startsWith('/')) {
-      normalized = '/' + normalized;
+    if (!normalized.startsWith("/")) {
+      normalized = `/${normalized}`;
     }
 
     // Resolve . and ..
-    const parts = normalized.split('/').filter(p => p && p !== '.');
+    const parts = normalized.split("/").filter((p) => p && p !== ".");
     const resolved: string[] = [];
 
     for (const part of parts) {
-      if (part === '..') {
+      if (part === "..") {
         resolved.pop();
       } else {
         resolved.push(part);
       }
     }
 
-    return '/' + resolved.join('/') || '/';
+    return `/${resolved.join("/")}` || "/";
   }
 
   private dirname(path: string): string {
     const normalized = this.normalizePath(path);
-    if (normalized === '/') return '/';
-    const lastSlash = normalized.lastIndexOf('/');
-    return lastSlash === 0 ? '/' : normalized.slice(0, lastSlash);
-  }
-
-  private basename(path: string): string {
-    const normalized = this.normalizePath(path);
-    if (normalized === '/') return '';
-    return normalized.split('/').pop() || '';
+    if (normalized === "/") return "/";
+    const lastSlash = normalized.lastIndexOf("/");
+    return lastSlash === 0 ? "/" : normalized.slice(0, lastSlash);
   }
 
   private ensureParentDirs(path: string): void {
     const dir = this.dirname(path);
-    if (dir === '/') return;
+    if (dir === "/") return;
 
     if (!this.data.has(dir)) {
       this.ensureParentDirs(dir);
-      this.data.set(dir, { type: 'directory', mode: 0o755, mtime: new Date() });
+      this.data.set(dir, { type: "directory", mode: 0o755, mtime: new Date() });
     }
   }
 
@@ -87,7 +87,12 @@ export class VirtualFs implements IFileSystem {
   writeFileSync(path: string, content: string): void {
     const normalized = this.normalizePath(path);
     this.ensureParentDirs(normalized);
-    this.data.set(normalized, { type: 'file', content, mode: 0o644, mtime: new Date() });
+    this.data.set(normalized, {
+      type: "file",
+      content,
+      mode: 0o644,
+      mtime: new Date(),
+    });
   }
 
   // Async public API
@@ -102,9 +107,11 @@ export class VirtualFs implements IFileSystem {
 
     // Follow symlinks
     const seen = new Set<string>();
-    while (entry && entry.type === 'symlink') {
+    while (entry && entry.type === "symlink") {
       if (seen.has(currentPath)) {
-        throw new Error(`ELOOP: too many levels of symbolic links, open '${path}'`);
+        throw new Error(
+          `ELOOP: too many levels of symbolic links, open '${path}'`,
+        );
       }
       seen.add(currentPath);
       currentPath = this.resolveSymlink(currentPath, entry.target);
@@ -114,8 +121,10 @@ export class VirtualFs implements IFileSystem {
     if (!entry) {
       throw new Error(`ENOENT: no such file or directory, open '${path}'`);
     }
-    if (entry.type !== 'file') {
-      throw new Error(`EISDIR: illegal operation on a directory, read '${path}'`);
+    if (entry.type !== "file") {
+      throw new Error(
+        `EISDIR: illegal operation on a directory, read '${path}'`,
+      );
     }
 
     return entry.content;
@@ -129,11 +138,13 @@ export class VirtualFs implements IFileSystem {
     const normalized = this.normalizePath(path);
     const existing = this.data.get(normalized);
 
-    if (existing && existing.type === 'directory') {
-      throw new Error(`EISDIR: illegal operation on a directory, write '${path}'`);
+    if (existing && existing.type === "directory") {
+      throw new Error(
+        `EISDIR: illegal operation on a directory, write '${path}'`,
+      );
     }
 
-    const currentContent = existing?.type === 'file' ? existing.content : '';
+    const currentContent = existing?.type === "file" ? existing.content : "";
     this.writeFileSync(path, currentContent + content);
   }
 
@@ -150,7 +161,7 @@ export class VirtualFs implements IFileSystem {
     }
 
     // Follow symlinks
-    if (entry.type === 'symlink') {
+    if (entry.type === "symlink") {
       const targetPath = this.resolveSymlink(normalized, entry.target);
       const targetEntry = this.data.get(targetPath);
       if (!targetEntry) {
@@ -160,11 +171,12 @@ export class VirtualFs implements IFileSystem {
     }
 
     // Calculate size: for files, it's the content length; for directories, it's 0
-    const size = entry.type === 'file' && entry.content ? entry.content.length : 0;
+    const size =
+      entry.type === "file" && entry.content ? entry.content.length : 0;
 
     return {
-      isFile: entry.type === 'file',
-      isDirectory: entry.type === 'directory',
+      isFile: entry.type === "file",
+      isDirectory: entry.type === "directory",
       isSymbolicLink: false, // stat follows symlinks, so this is always false
       mode: entry.mode,
       size,
@@ -181,7 +193,7 @@ export class VirtualFs implements IFileSystem {
     }
 
     // For symlinks, return symlink info (don't follow)
-    if (entry.type === 'symlink') {
+    if (entry.type === "symlink") {
       return {
         isFile: false,
         isDirectory: false,
@@ -193,11 +205,12 @@ export class VirtualFs implements IFileSystem {
     }
 
     // Calculate size: for files, it's the content length; for directories, it's 0
-    const size = entry.type === 'file' && entry.content ? entry.content.length : 0;
+    const size =
+      entry.type === "file" && entry.content ? entry.content.length : 0;
 
     return {
-      isFile: entry.type === 'file',
-      isDirectory: entry.type === 'directory',
+      isFile: entry.type === "file",
+      isDirectory: entry.type === "directory",
       isSymbolicLink: false,
       mode: entry.mode,
       size,
@@ -207,12 +220,12 @@ export class VirtualFs implements IFileSystem {
 
   // Helper to resolve symlink target paths
   private resolveSymlink(symlinkPath: string, target: string): string {
-    if (target.startsWith('/')) {
+    if (target.startsWith("/")) {
       return this.normalizePath(target);
     }
     // Relative target: resolve from symlink's directory
     const dir = this.dirname(symlinkPath);
-    return this.normalizePath(dir === '/' ? '/' + target : dir + '/' + target);
+    return this.normalizePath(dir === "/" ? `/${target}` : `${dir}/${target}`);
   }
 
   async mkdir(path: string, options?: MkdirOptions): Promise<void> {
@@ -227,7 +240,7 @@ export class VirtualFs implements IFileSystem {
 
     if (this.data.has(normalized)) {
       const entry = this.data.get(normalized);
-      if (entry?.type === 'file') {
+      if (entry?.type === "file") {
         throw new Error(`EEXIST: file already exists, mkdir '${path}'`);
       }
       // Directory already exists
@@ -238,7 +251,7 @@ export class VirtualFs implements IFileSystem {
     }
 
     const parent = this.dirname(normalized);
-    if (parent !== '/' && !this.data.has(parent)) {
+    if (parent !== "/" && !this.data.has(parent)) {
       if (options?.recursive) {
         this.mkdirSync(parent, { recursive: true });
       } else {
@@ -246,7 +259,11 @@ export class VirtualFs implements IFileSystem {
       }
     }
 
-    this.data.set(normalized, { type: 'directory', mode: 0o755, mtime: new Date() });
+    this.data.set(normalized, {
+      type: "directory",
+      mode: 0o755,
+      mtime: new Date(),
+    });
   }
 
   async readdir(path: string): Promise<string[]> {
@@ -256,18 +273,18 @@ export class VirtualFs implements IFileSystem {
     if (!entry) {
       throw new Error(`ENOENT: no such file or directory, scandir '${path}'`);
     }
-    if (entry.type !== 'directory') {
+    if (entry.type !== "directory") {
       throw new Error(`ENOTDIR: not a directory, scandir '${path}'`);
     }
 
-    const prefix = normalized === '/' ? '/' : normalized + '/';
+    const prefix = normalized === "/" ? "/" : `${normalized}/`;
     const entries: string[] = [];
 
     for (const p of this.data.keys()) {
       if (p === normalized) continue;
       if (p.startsWith(prefix)) {
         const rest = p.slice(prefix.length);
-        const name = rest.split('/')[0];
+        const name = rest.split("/")[0];
         if (name && !entries.includes(name)) {
           entries.push(name);
         }
@@ -286,14 +303,15 @@ export class VirtualFs implements IFileSystem {
       throw new Error(`ENOENT: no such file or directory, rm '${path}'`);
     }
 
-    if (entry.type === 'directory') {
+    if (entry.type === "directory") {
       const children = await this.readdir(normalized);
       if (children.length > 0) {
         if (!options?.recursive) {
           throw new Error(`ENOTEMPTY: directory not empty, rm '${path}'`);
         }
         for (const child of children) {
-          const childPath = normalized === '/' ? '/' + child : normalized + '/' + child;
+          const childPath =
+            normalized === "/" ? `/${child}` : `${normalized}/${child}`;
           await this.rm(childPath, options);
         }
       }
@@ -311,18 +329,19 @@ export class VirtualFs implements IFileSystem {
       throw new Error(`ENOENT: no such file or directory, cp '${src}'`);
     }
 
-    if (srcEntry.type === 'file') {
+    if (srcEntry.type === "file") {
       this.ensureParentDirs(destNorm);
       this.data.set(destNorm, { ...srcEntry });
-    } else if (srcEntry.type === 'directory') {
+    } else if (srcEntry.type === "directory") {
       if (!options?.recursive) {
         throw new Error(`EISDIR: is a directory, cp '${src}'`);
       }
       await this.mkdir(destNorm, { recursive: true });
       const children = await this.readdir(srcNorm);
       for (const child of children) {
-        const srcChild = srcNorm === '/' ? '/' + child : srcNorm + '/' + child;
-        const destChild = destNorm === '/' ? '/' + child : destNorm + '/' + child;
+        const srcChild = srcNorm === "/" ? `/${child}` : `${srcNorm}/${child}`;
+        const destChild =
+          destNorm === "/" ? `/${child}` : `${destNorm}/${child}`;
         await this.cp(srcChild, destChild, options);
       }
     }
@@ -340,10 +359,10 @@ export class VirtualFs implements IFileSystem {
 
   // Resolve a path relative to a base
   resolvePath(base: string, path: string): string {
-    if (path.startsWith('/')) {
+    if (path.startsWith("/")) {
       return this.normalizePath(path);
     }
-    const combined = base === '/' ? '/' + path : base + '/' + path;
+    const combined = base === "/" ? `/${path}` : `${base}/${path}`;
     return this.normalizePath(combined);
   }
 
@@ -369,7 +388,7 @@ export class VirtualFs implements IFileSystem {
 
     this.ensureParentDirs(normalized);
     this.data.set(normalized, {
-      type: 'symlink',
+      type: "symlink",
       target,
       mode: 0o777,
       mtime: new Date(),
@@ -383,10 +402,12 @@ export class VirtualFs implements IFileSystem {
 
     const entry = this.data.get(existingNorm);
     if (!entry) {
-      throw new Error(`ENOENT: no such file or directory, link '${existingPath}'`);
+      throw new Error(
+        `ENOENT: no such file or directory, link '${existingPath}'`,
+      );
     }
 
-    if (entry.type !== 'file') {
+    if (entry.type !== "file") {
       throw new Error(`EPERM: operation not permitted, link '${existingPath}'`);
     }
 
@@ -398,7 +419,7 @@ export class VirtualFs implements IFileSystem {
     // For hard links, we create a copy (simulating inode sharing)
     // In a real fs, they'd share the same inode
     this.data.set(newNorm, {
-      type: 'file',
+      type: "file",
       content: entry.content,
       mode: entry.mode,
       mtime: entry.mtime,
@@ -414,7 +435,7 @@ export class VirtualFs implements IFileSystem {
       throw new Error(`ENOENT: no such file or directory, readlink '${path}'`);
     }
 
-    if (entry.type !== 'symlink') {
+    if (entry.type !== "symlink") {
       throw new Error(`EINVAL: invalid argument, readlink '${path}'`);
     }
 

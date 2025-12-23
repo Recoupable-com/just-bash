@@ -1,7 +1,12 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { createTestDir, cleanupTestDir, setupFiles, compareOutputs } from './test-helpers.js';
+import { afterEach, beforeEach, describe, it } from "vitest";
+import {
+  cleanupTestDir,
+  compareOutputs,
+  createTestDir,
+  setupFiles,
+} from "./test-helpers.js";
 
-describe('echo command - Real Bash Comparison', () => {
+describe("echo command - Real Bash Comparison", () => {
   let testDir: string;
 
   beforeEach(async () => {
@@ -12,52 +17,52 @@ describe('echo command - Real Bash Comparison', () => {
     await cleanupTestDir(testDir);
   });
 
-  it('should match simple string', async () => {
+  it("should match simple string", async () => {
     const env = await setupFiles(testDir, {});
-    await compareOutputs(env, testDir, 'echo hello');
+    await compareOutputs(env, testDir, "echo hello");
   });
 
-  it('should match double-quoted string', async () => {
+  it("should match double-quoted string", async () => {
     const env = await setupFiles(testDir, {});
     await compareOutputs(env, testDir, 'echo "hello world"');
   });
 
-  it('should match single-quoted string', async () => {
+  it("should match single-quoted string", async () => {
     const env = await setupFiles(testDir, {});
     await compareOutputs(env, testDir, "echo 'single quotes'");
   });
 
-  it('should match -n flag (no newline)', async () => {
+  it("should match -n flag (no newline)", async () => {
     const env = await setupFiles(testDir, {});
-    await compareOutputs(env, testDir, 'echo -n hello');
+    await compareOutputs(env, testDir, "echo -n hello");
   });
 
-  it('should match multiple arguments', async () => {
+  it("should match multiple arguments", async () => {
     const env = await setupFiles(testDir, {});
-    await compareOutputs(env, testDir, 'echo one two three');
+    await compareOutputs(env, testDir, "echo one two three");
   });
 
-  it('should match empty echo', async () => {
+  it("should match empty echo", async () => {
     const env = await setupFiles(testDir, {});
-    await compareOutputs(env, testDir, 'echo');
+    await compareOutputs(env, testDir, "echo");
   });
 
-  it('should match echo with special characters', async () => {
+  it("should match echo with special characters", async () => {
     const env = await setupFiles(testDir, {});
     await compareOutputs(env, testDir, 'echo "hello * world"');
   });
 
-  it('should match echo with escaped quotes', async () => {
+  it("should match echo with escaped quotes", async () => {
     const env = await setupFiles(testDir, {});
     await compareOutputs(env, testDir, 'echo "say \\"hello\\""');
   });
 
-  it('should match -e flag with newline', async () => {
+  it("should match -e flag with newline", async () => {
     const env = await setupFiles(testDir, {});
     await compareOutputs(env, testDir, 'echo -e "line1\\nline2"');
   });
 
-  it('should match -e flag with tab', async () => {
+  it("should match -e flag with tab", async () => {
     const env = await setupFiles(testDir, {});
     await compareOutputs(env, testDir, 'echo -e "col1\\tcol2"');
   });

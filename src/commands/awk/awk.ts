@@ -1,14 +1,14 @@
-import { Command, CommandContext, ExecResult } from '../../types.js';
-import { hasHelpFlag, showHelp, unknownOption } from '../help.js';
+import type { Command, CommandContext, ExecResult } from "../../types.js";
+import { hasHelpFlag, showHelp, unknownOption } from "../help.js";
 
 const awkHelp = {
-  name: 'awk',
-  summary: 'pattern scanning and text processing language',
+  name: "awk",
+  summary: "pattern scanning and text processing language",
   usage: "awk [OPTIONS] 'PROGRAM' [FILE...]",
   options: [
-    '-F FS      use FS as field separator',
-    '-v VAR=VAL assign VAL to variable VAR',
-    '    --help display this help and exit',
+    "-F FS      use FS as field separator",
+    "-v VAR=VAL assign VAL to variable VAR",
+    "    --help display this help and exit",
   ],
 };
 
@@ -23,7 +23,7 @@ interface AwkContext {
 }
 
 export const awkCommand: Command = {
-  name: 'awk',
+  name: "awk",
 
   async execute(args: string[], ctx: CommandContext): Promise<ExecResult> {
     if (hasHelpFlag(args)) {
@@ -31,47 +31,47 @@ export const awkCommand: Command = {
     }
 
     let fieldSep = /\s+/;
-    let fieldSepStr = ' ';
+    let fieldSepStr = " ";
     const vars: Record<string, string | number> = {};
     let programIdx = 0;
 
     // Parse options
     for (let i = 0; i < args.length; i++) {
       const arg = args[i];
-      if (arg === '-F' && i + 1 < args.length) {
+      if (arg === "-F" && i + 1 < args.length) {
         fieldSepStr = processEscapes(args[++i]);
         fieldSep = new RegExp(escapeRegex(fieldSepStr));
         programIdx = i + 1;
-      } else if (arg.startsWith('-F')) {
+      } else if (arg.startsWith("-F")) {
         fieldSepStr = processEscapes(arg.slice(2));
         fieldSep = new RegExp(escapeRegex(fieldSepStr));
         programIdx = i + 1;
-      } else if (arg === '-v' && i + 1 < args.length) {
+      } else if (arg === "-v" && i + 1 < args.length) {
         const assignment = args[++i];
-        const eqIdx = assignment.indexOf('=');
+        const eqIdx = assignment.indexOf("=");
         if (eqIdx > 0) {
           const varName = assignment.slice(0, eqIdx);
           const varValue = assignment.slice(eqIdx + 1);
           vars[varName] = varValue;
         }
         programIdx = i + 1;
-      } else if (arg.startsWith('--')) {
-        return unknownOption('awk', arg);
-      } else if (arg.startsWith('-') && arg.length > 1) {
+      } else if (arg.startsWith("--")) {
+        return unknownOption("awk", arg);
+      } else if (arg.startsWith("-") && arg.length > 1) {
         // Check for unknown short options (F and v require args)
         const optChar = arg[1];
-        if (optChar !== 'F' && optChar !== 'v') {
-          return unknownOption('awk', `-${optChar}`);
+        if (optChar !== "F" && optChar !== "v") {
+          return unknownOption("awk", `-${optChar}`);
         }
         programIdx = i + 1;
-      } else if (!arg.startsWith('-')) {
+      } else if (!arg.startsWith("-")) {
         programIdx = i;
         break;
       }
     }
 
     if (programIdx >= args.length) {
-      return { stdout: '', stderr: 'awk: missing program\n', exitCode: 1 };
+      return { stdout: "", stderr: "awk: missing program\n", exitCode: 1 };
     }
 
     const program = args[programIdx];
@@ -86,10 +86,14 @@ export const awkCommand: Command = {
           const filePath = ctx.fs.resolvePath(ctx.cwd, file);
           contents.push(await ctx.fs.readFile(filePath));
         } catch {
-          return { stdout: '', stderr: `awk: ${file}: No such file or directory\n`, exitCode: 1 };
+          return {
+            stdout: "",
+            stderr: `awk: ${file}: No such file or directory\n`,
+            exitCode: 1,
+          };
         }
       }
-      input = contents.join('');
+      input = contents.join("");
     } else {
       input = ctx.stdin;
     }
@@ -100,15 +104,15 @@ export const awkCommand: Command = {
     // Execute
     const awkCtx: AwkContext = {
       FS: fieldSepStr,
-      OFS: ' ',
+      OFS: " ",
       NR: 0,
       NF: 0,
       fields: [],
-      line: '',
+      line: "",
       vars,
     };
 
-    let stdout = '';
+    let stdout = "";
 
     // BEGIN block
     if (begin) {
@@ -116,9 +120,9 @@ export const awkCommand: Command = {
     }
 
     // Process lines
-    const lines = input.split('\n');
+    const lines = input.split("\n");
     // Remove trailing empty line if input ends with newline
-    if (lines.length > 0 && lines[lines.length - 1] === '') {
+    if (lines.length > 0 && lines[lines.length - 1] === "") {
       lines.pop();
     }
 
@@ -140,7 +144,7 @@ export const awkCommand: Command = {
       stdout += executeAwkAction(end, awkCtx);
     }
 
-    return { stdout, stderr: '', exitCode: 0 };
+    return { stdout, stderr: "", exitCode: 0 };
   },
 };
 
@@ -190,25 +194,34 @@ function parseAwkProgram(program: string): ParsedProgram {
       // Pattern { action }
       const patternAction = remaining.match(/^\/([^/]*)\/\s*\{([^}]*)\}$/);
       if (patternAction) {
-        result.main.push({ pattern: patternAction[1], action: patternAction[2].trim() });
+        result.main.push({
+          pattern: patternAction[1],
+          action: patternAction[2].trim(),
+        });
       } else {
         // Pattern only (no action) - /pattern/ - default action is print
         const patternOnly = remaining.match(/^\/([^/]*)\/$/);
         if (patternOnly) {
-          result.main.push({ pattern: patternOnly[1], action: 'print' });
+          result.main.push({ pattern: patternOnly[1], action: "print" });
         } else {
           // Condition { action }
           const condAction = remaining.match(/^([^{]+)\{([^}]*)\}$/);
           if (condAction) {
-            result.main.push({ pattern: condAction[1].trim(), action: condAction[2].trim() });
-          } else if (!remaining.includes('{')) {
+            result.main.push({
+              pattern: condAction[1].trim(),
+              action: condAction[2].trim(),
+            });
+          } else if (!remaining.includes("{")) {
             // Condition only (no action) - NR==2 or similar - default action is print
             // Or just a print expression like: print $1
-            if (remaining.startsWith('print') || remaining.startsWith('printf')) {
+            if (
+              remaining.startsWith("print") ||
+              remaining.startsWith("printf")
+            ) {
               result.main.push({ pattern: null, action: remaining });
             } else {
               // It's a condition without action - default to print
-              result.main.push({ pattern: remaining, action: 'print' });
+              result.main.push({ pattern: remaining, action: "print" });
             }
           }
         }
@@ -218,7 +231,7 @@ function parseAwkProgram(program: string): ParsedProgram {
 
   // Default action is print if no action specified
   if (result.main.length === 0 && !result.begin && !result.end) {
-    result.main.push({ pattern: null, action: 'print' });
+    result.main.push({ pattern: null, action: "print" });
   }
 
   return result;
@@ -228,14 +241,16 @@ function matchesPattern(pattern: string | null, ctx: AwkContext): boolean {
   if (pattern === null) return true;
 
   // Regex pattern (explicit /pattern/)
-  if (pattern.startsWith('/') && pattern.endsWith('/')) {
+  if (pattern.startsWith("/") && pattern.endsWith("/")) {
     const regex = new RegExp(pattern.slice(1, -1));
     return regex.test(ctx.line);
   }
 
   // Check if it looks like a condition (contains comparison operators or starts with NR/NF/$)
-  if (/^(NR|NF|\$\d+)\s*(==|!=|>|<|>=|<=|~)/.test(pattern) ||
-      /\s*(==|!=|>|<|>=|<=)\s*/.test(pattern)) {
+  if (
+    /^(NR|NF|\$\d+)\s*(==|!=|>|<|>=|<=|~)/.test(pattern) ||
+    /\s*(==|!=|>|<|>=|<=)\s*/.test(pattern)
+  ) {
     return evaluateCondition(pattern, ctx);
   }
 
@@ -253,15 +268,15 @@ function evaluateCondition(condition: string, ctx: AwkContext): boolean {
   condition = condition.trim();
 
   // Handle && (AND) conditions
-  if (condition.includes('&&')) {
-    const parts = condition.split('&&').map(p => p.trim());
-    return parts.every(part => evaluateCondition(part, ctx));
+  if (condition.includes("&&")) {
+    const parts = condition.split("&&").map((p) => p.trim());
+    return parts.every((part) => evaluateCondition(part, ctx));
   }
 
   // Handle || (OR) conditions
-  if (condition.includes('||')) {
-    const parts = condition.split('||').map(p => p.trim());
-    return parts.some(part => evaluateCondition(part, ctx));
+  if (condition.includes("||")) {
+    const parts = condition.split("||").map((p) => p.trim());
+    return parts.some((part) => evaluateCondition(part, ctx));
   }
 
   // Handle NR comparisons: NR == n, NR > n, etc.
@@ -277,7 +292,7 @@ function evaluateCondition(condition: string, ctx: AwkContext): boolean {
   if (fieldRegex) {
     const fieldNum = parseInt(fieldRegex[1], 10);
     const pattern = fieldRegex[2];
-    const fieldVal = fieldNum === 0 ? ctx.line : (ctx.fields[fieldNum - 1] || '');
+    const fieldVal = fieldNum === 0 ? ctx.line : ctx.fields[fieldNum - 1] || "";
     return new RegExp(pattern).test(fieldVal);
   }
 
@@ -286,7 +301,7 @@ function evaluateCondition(condition: string, ctx: AwkContext): boolean {
   if (fieldStrEq) {
     const fieldNum = parseInt(fieldStrEq[1], 10);
     const value = fieldStrEq[2];
-    const fieldVal = fieldNum === 0 ? ctx.line : (ctx.fields[fieldNum - 1] || '');
+    const fieldVal = fieldNum === 0 ? ctx.line : ctx.fields[fieldNum - 1] || "";
     return fieldVal === value;
   }
 
@@ -314,27 +329,27 @@ function evaluateConditionExpr(expr: string, ctx: AwkContext): number | string {
   if (fieldMatch) {
     const n = parseInt(fieldMatch[1], 10);
     if (n === 0) return ctx.line;
-    const val = ctx.fields[n - 1] || '';
+    const val = ctx.fields[n - 1] || "";
     // Try to convert to number if it looks like one
     const num = parseFloat(val);
-    return isNaN(num) ? val : num;
+    return Number.isNaN(num) ? val : num;
   }
 
   // Built-in variables
-  if (expr === 'NR') return ctx.NR;
-  if (expr === 'NF') return ctx.NF;
+  if (expr === "NR") return ctx.NR;
+  if (expr === "NF") return ctx.NF;
 
   // User variables
   if (ctx.vars[expr] !== undefined) {
     const val = ctx.vars[expr];
-    if (typeof val === 'number') return val;
+    if (typeof val === "number") return val;
     const num = parseFloat(String(val));
-    return isNaN(num) ? val : num;
+    return Number.isNaN(num) ? val : num;
   }
 
   // Number literal
   const num = parseFloat(expr);
-  if (!isNaN(num)) return num;
+  if (!Number.isNaN(num)) return num;
 
   // String literal with quotes
   if (expr.startsWith('"') && expr.endsWith('"')) {
@@ -349,52 +364,72 @@ function evaluateConditionExpr(expr: string, ctx: AwkContext): number | string {
   return expr;
 }
 
-function compareValues(left: number | string, op: string, right: number | string): boolean {
+function compareValues(
+  left: number | string,
+  op: string,
+  right: number | string,
+): boolean {
   // Convert to numbers for comparison if both can be numbers
-  const leftNum = typeof left === 'number' ? left : parseFloat(String(left));
-  const rightNum = typeof right === 'number' ? right : parseFloat(String(right));
+  const leftNum = typeof left === "number" ? left : parseFloat(String(left));
+  const rightNum =
+    typeof right === "number" ? right : parseFloat(String(right));
 
-  const useNumeric = !isNaN(leftNum) && !isNaN(rightNum);
+  const useNumeric = !Number.isNaN(leftNum) && !Number.isNaN(rightNum);
 
   if (useNumeric) {
     switch (op) {
-      case '==': return leftNum === rightNum;
-      case '!=': return leftNum !== rightNum;
-      case '>': return leftNum > rightNum;
-      case '<': return leftNum < rightNum;
-      case '>=': return leftNum >= rightNum;
-      case '<=': return leftNum <= rightNum;
+      case "==":
+        return leftNum === rightNum;
+      case "!=":
+        return leftNum !== rightNum;
+      case ">":
+        return leftNum > rightNum;
+      case "<":
+        return leftNum < rightNum;
+      case ">=":
+        return leftNum >= rightNum;
+      case "<=":
+        return leftNum <= rightNum;
     }
   } else {
     // String comparison
     const leftStr = String(left);
     const rightStr = String(right);
     switch (op) {
-      case '==': return leftStr === rightStr;
-      case '!=': return leftStr !== rightStr;
-      case '>': return leftStr > rightStr;
-      case '<': return leftStr < rightStr;
-      case '>=': return leftStr >= rightStr;
-      case '<=': return leftStr <= rightStr;
+      case "==":
+        return leftStr === rightStr;
+      case "!=":
+        return leftStr !== rightStr;
+      case ">":
+        return leftStr > rightStr;
+      case "<":
+        return leftStr < rightStr;
+      case ">=":
+        return leftStr >= rightStr;
+      case "<=":
+        return leftStr <= rightStr;
     }
   }
   return false;
 }
 
 function executeAwkAction(action: string, ctx: AwkContext): string {
-  let output = '';
+  let output = "";
 
   // Split by semicolons for multiple statements
-  const statements = action.split(';').map(s => s.trim()).filter(s => s);
+  const statements = action
+    .split(";")
+    .map((s) => s.trim())
+    .filter((s) => s);
 
   for (const stmt of statements) {
     // Handle print statement
-    if (stmt === 'print' || stmt === 'print $0') {
-      output += ctx.line + '\n';
-    } else if (stmt.startsWith('print ')) {
+    if (stmt === "print" || stmt === "print $0") {
+      output += `${ctx.line}\n`;
+    } else if (stmt.startsWith("print ")) {
       const printArgs = stmt.slice(6).trim();
-      output += evaluatePrintArgs(printArgs, ctx) + '\n';
-    } else if (stmt.startsWith('printf ')) {
+      output += `${evaluatePrintArgs(printArgs, ctx)}\n`;
+    } else if (stmt.startsWith("printf ")) {
       // Basic printf support
       const printfArgs = stmt.slice(7).trim();
       output += evaluatePrintf(printfArgs, ctx);
@@ -418,29 +453,29 @@ function executeAwkAction(action: string, ctx: AwkContext): string {
       ctx.vars[varName] = current - 1;
     }
     // Handle compound assignment: +=, -=, *=, /=
-    else if (stmt.includes('+=')) {
-      const eqIdx = stmt.indexOf('+=');
+    else if (stmt.includes("+=")) {
+      const eqIdx = stmt.indexOf("+=");
       const varName = stmt.slice(0, eqIdx).trim();
       const expr = stmt.slice(eqIdx + 2).trim();
       const current = Number(ctx.vars[varName]) || 0;
       const value = Number(evaluateExpression(expr, ctx)) || 0;
       ctx.vars[varName] = current + value;
-    } else if (stmt.includes('-=')) {
-      const eqIdx = stmt.indexOf('-=');
+    } else if (stmt.includes("-=")) {
+      const eqIdx = stmt.indexOf("-=");
       const varName = stmt.slice(0, eqIdx).trim();
       const expr = stmt.slice(eqIdx + 2).trim();
       const current = Number(ctx.vars[varName]) || 0;
       const value = Number(evaluateExpression(expr, ctx)) || 0;
       ctx.vars[varName] = current - value;
-    } else if (stmt.includes('*=')) {
-      const eqIdx = stmt.indexOf('*=');
+    } else if (stmt.includes("*=")) {
+      const eqIdx = stmt.indexOf("*=");
       const varName = stmt.slice(0, eqIdx).trim();
       const expr = stmt.slice(eqIdx + 2).trim();
       const current = Number(ctx.vars[varName]) || 0;
       const value = Number(evaluateExpression(expr, ctx)) || 0;
       ctx.vars[varName] = current * value;
-    } else if (stmt.includes('/=')) {
-      const eqIdx = stmt.indexOf('/=');
+    } else if (stmt.includes("/=")) {
+      const eqIdx = stmt.indexOf("/=");
       const varName = stmt.slice(0, eqIdx).trim();
       const expr = stmt.slice(eqIdx + 2).trim();
       const current = Number(ctx.vars[varName]) || 0;
@@ -448,9 +483,14 @@ function executeAwkAction(action: string, ctx: AwkContext): string {
       ctx.vars[varName] = value !== 0 ? current / value : 0;
     }
     // Simple variable assignment (must check after compound assignments)
-    else if (stmt.includes('=') && !stmt.includes('==') && !stmt.includes('!=') &&
-             !stmt.includes('>=') && !stmt.includes('<=')) {
-      const eqIdx = stmt.indexOf('=');
+    else if (
+      stmt.includes("=") &&
+      !stmt.includes("==") &&
+      !stmt.includes("!=") &&
+      !stmt.includes(">=") &&
+      !stmt.includes("<=")
+    ) {
+      const eqIdx = stmt.indexOf("=");
       const varName = stmt.slice(0, eqIdx).trim();
       const expr = stmt.slice(eqIdx + 1).trim();
       ctx.vars[varName] = evaluateExpression(expr, ctx);
@@ -475,24 +515,24 @@ function evaluatePrintArgs(args: string, ctx: AwkContext): string {
 
 function splitPrintArgs(args: string): string[] {
   const result: string[] = [];
-  let current = '';
+  let current = "";
   let inQuote = false;
   let depth = 0;
 
   for (let i = 0; i < args.length; i++) {
     const ch = args[i];
-    if (ch === '"' && args[i - 1] !== '\\') {
+    if (ch === '"' && args[i - 1] !== "\\") {
       inQuote = !inQuote;
       current += ch;
-    } else if (ch === '(' && !inQuote) {
+    } else if (ch === "(" && !inQuote) {
       depth++;
       current += ch;
-    } else if (ch === ')' && !inQuote) {
+    } else if (ch === ")" && !inQuote) {
       depth--;
       current += ch;
-    } else if (ch === ',' && !inQuote && depth === 0) {
+    } else if (ch === "," && !inQuote && depth === 0) {
       result.push(current);
-      current = '';
+      current = "";
     } else {
       current += ch;
     }
@@ -515,14 +555,14 @@ function evaluateExpression(expr: string, ctx: AwkContext): string | number {
   if (fieldMatch) {
     const n = parseInt(fieldMatch[1], 10);
     if (n === 0) return ctx.line;
-    return ctx.fields[n - 1] || '';
+    return ctx.fields[n - 1] || "";
   }
 
   // NR, NF
-  if (expr === 'NR') return ctx.NR;
-  if (expr === 'NF') return ctx.NF;
-  if (expr === 'FS') return ctx.FS;
-  if (expr === 'OFS') return ctx.OFS;
+  if (expr === "NR") return ctx.NR;
+  if (expr === "NF") return ctx.NF;
+  if (expr === "FS") return ctx.FS;
+  if (expr === "OFS") return ctx.OFS;
 
   // Variable (defined)
   if (ctx.vars[expr] !== undefined) {
@@ -531,33 +571,43 @@ function evaluateExpression(expr: string, ctx: AwkContext): string | number {
 
   // Arithmetic - check BEFORE concatenation to handle $1 + $2 and sum/count
   // First try with spaces (to properly handle $1 + $2 vs $1+$2 concatenation)
-  const arithMatchSpaced = expr.match(/^(.+?)\s+([\+\-\*\/\%])\s+(.+)$/);
+  const arithMatchSpaced = expr.match(/^(.+?)\s+([+\-*/%])\s+(.+)$/);
   if (arithMatchSpaced) {
     const left = Number(evaluateExpression(arithMatchSpaced[1], ctx));
     const right = Number(evaluateExpression(arithMatchSpaced[3], ctx));
     switch (arithMatchSpaced[2]) {
-      case '+': return left + right;
-      case '-': return left - right;
-      case '*': return left * right;
-      case '/': return right !== 0 ? left / right : 0;
-      case '%': return left % right;
+      case "+":
+        return left + right;
+      case "-":
+        return left - right;
+      case "*":
+        return left * right;
+      case "/":
+        return right !== 0 ? left / right : 0;
+      case "%":
+        return left % right;
     }
   }
 
   // Also check for arithmetic without spaces (sum/count, a*b) but only for simple identifiers/numbers
-  const arithMatchNoSpace = expr.match(/^([a-zA-Z_]\w*|\$\d+|\d+(?:\.\d+)?)\s*([\*\/\%])\s*([a-zA-Z_]\w*|\$\d+|\d+(?:\.\d+)?)$/);
+  const arithMatchNoSpace = expr.match(
+    /^([a-zA-Z_]\w*|\$\d+|\d+(?:\.\d+)?)\s*([*/%])\s*([a-zA-Z_]\w*|\$\d+|\d+(?:\.\d+)?)$/,
+  );
   if (arithMatchNoSpace) {
     const left = Number(evaluateExpression(arithMatchNoSpace[1], ctx));
     const right = Number(evaluateExpression(arithMatchNoSpace[3], ctx));
     switch (arithMatchNoSpace[2]) {
-      case '*': return left * right;
-      case '/': return right !== 0 ? left / right : 0;
-      case '%': return left % right;
+      case "*":
+        return left * right;
+      case "/":
+        return right !== 0 ? left / right : 0;
+      case "%":
+        return left % right;
     }
   }
 
   // Concatenation (strings next to each other without arithmetic operators)
-  if (expr.includes('$') || expr.includes('"')) {
+  if (expr.includes("$") || expr.includes('"')) {
     return evaluateConcatenation(expr, ctx);
   }
 
@@ -568,14 +618,14 @@ function evaluateExpression(expr: string, ctx: AwkContext): string | number {
 
   // Uninitialized variable (looks like identifier) - return empty string
   if (/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(expr)) {
-    return '';
+    return "";
   }
 
   return expr;
 }
 
 function evaluateConcatenation(expr: string, ctx: AwkContext): string {
-  let result = '';
+  let result = "";
   let i = 0;
 
   while (i < expr.length) {
@@ -585,30 +635,30 @@ function evaluateConcatenation(expr: string, ctx: AwkContext): string {
 
     if (expr[i] === '"') {
       // String literal
-      let str = '';
+      let str = "";
       i++; // skip opening quote
       while (i < expr.length && expr[i] !== '"') {
         str += expr[i++];
       }
       i++; // skip closing quote
       result += str;
-    } else if (expr[i] === '$') {
+    } else if (expr[i] === "$") {
       // Field reference
       i++; // skip $
-      let numStr = '';
+      let numStr = "";
       while (i < expr.length && /\d/.test(expr[i])) {
         numStr += expr[i++];
       }
       const n = parseInt(numStr, 10);
-      result += n === 0 ? ctx.line : (ctx.fields[n - 1] || '');
+      result += n === 0 ? ctx.line : ctx.fields[n - 1] || "";
     } else {
       // Variable or literal
-      let token = '';
-      while (i < expr.length && !/[\s\$"]/.test(expr[i])) {
+      let token = "";
+      while (i < expr.length && !/[\s$"]/.test(expr[i])) {
         token += expr[i++];
       }
-      if (token === 'NR') result += ctx.NR;
-      else if (token === 'NF') result += ctx.NF;
+      if (token === "NR") result += ctx.NR;
+      else if (token === "NF") result += ctx.NF;
       else if (ctx.vars[token] !== undefined) result += ctx.vars[token];
       else result += token;
     }
@@ -620,34 +670,36 @@ function evaluateConcatenation(expr: string, ctx: AwkContext): string {
 function evaluatePrintf(args: string, ctx: AwkContext): string {
   // Very basic printf - just handles %s and %d
   const match = args.match(/^"([^"]*)"(.*)$/);
-  if (!match) return '';
+  if (!match) return "";
 
-  let format = match[1];
+  const format = match[1];
   const restArgs = match[2].trim();
-  const values = restArgs ? splitPrintArgs(restArgs.replace(/^,\s*/, '')) : [];
+  const values = restArgs ? splitPrintArgs(restArgs.replace(/^,\s*/, "")) : [];
 
   let valueIdx = 0;
-  let result = '';
+  let result = "";
   let i = 0;
 
   while (i < format.length) {
-    if (format[i] === '%' && i + 1 < format.length) {
+    if (format[i] === "%" && i + 1 < format.length) {
       const spec = format[i + 1];
-      if (spec === 's' || spec === 'd') {
-        const val = values[valueIdx] ? evaluateExpression(values[valueIdx], ctx) : '';
+      if (spec === "s" || spec === "d") {
+        const val = values[valueIdx]
+          ? evaluateExpression(values[valueIdx], ctx)
+          : "";
         result += String(val);
         valueIdx++;
         i += 2;
-      } else if (spec === '%') {
-        result += '%';
+      } else if (spec === "%") {
+        result += "%";
         i += 2;
       } else {
         result += format[i++];
       }
-    } else if (format[i] === '\\' && i + 1 < format.length) {
+    } else if (format[i] === "\\" && i + 1 < format.length) {
       const esc = format[i + 1];
-      if (esc === 'n') result += '\n';
-      else if (esc === 't') result += '\t';
+      if (esc === "n") result += "\n";
+      else if (esc === "t") result += "\t";
       else result += esc;
       i += 2;
     } else {
@@ -659,13 +711,13 @@ function evaluatePrintf(args: string, ctx: AwkContext): string {
 }
 
 function escapeRegex(str: string): string {
-  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 function processEscapes(str: string): string {
   return str
-    .replace(/\\t/g, '\t')
-    .replace(/\\n/g, '\n')
-    .replace(/\\r/g, '\r')
-    .replace(/\\\\/g, '\\');
+    .replace(/\\t/g, "\t")
+    .replace(/\\n/g, "\n")
+    .replace(/\\r/g, "\r")
+    .replace(/\\\\/g, "\\");
 }

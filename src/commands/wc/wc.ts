@@ -1,21 +1,21 @@
-import { Command, CommandContext, ExecResult } from '../../types.js';
-import { hasHelpFlag, showHelp, unknownOption } from '../help.js';
+import type { Command, CommandContext, ExecResult } from "../../types.js";
+import { hasHelpFlag, showHelp, unknownOption } from "../help.js";
 
 const wcHelp = {
-  name: 'wc',
-  summary: 'print newline, word, and byte counts for each file',
-  usage: 'wc [OPTION]... [FILE]...',
+  name: "wc",
+  summary: "print newline, word, and byte counts for each file",
+  usage: "wc [OPTION]... [FILE]...",
   options: [
-    '-c, --bytes      print the byte counts',
-    '-m, --chars      print the character counts',
-    '-l, --lines      print the newline counts',
-    '-w, --words      print the word counts',
-    '    --help       display this help and exit',
+    "-c, --bytes      print the byte counts",
+    "-m, --chars      print the character counts",
+    "-l, --lines      print the newline counts",
+    "-w, --words      print the word counts",
+    "    --help       display this help and exit",
   ],
 };
 
 export const wcCommand: Command = {
-  name: 'wc',
+  name: "wc",
 
   async execute(args: string[], ctx: CommandContext): Promise<ExecResult> {
     if (hasHelpFlag(args)) {
@@ -29,21 +29,21 @@ export const wcCommand: Command = {
 
     // Parse arguments
     for (const arg of args) {
-      if (arg.startsWith('-') && !arg.startsWith('--')) {
+      if (arg.startsWith("-") && !arg.startsWith("--")) {
         for (const flag of arg.slice(1)) {
-          if (flag === 'l') showLines = true;
-          else if (flag === 'w') showWords = true;
-          else if (flag === 'c' || flag === 'm') showChars = true;
-          else return unknownOption('wc', `-${flag}`);
+          if (flag === "l") showLines = true;
+          else if (flag === "w") showWords = true;
+          else if (flag === "c" || flag === "m") showChars = true;
+          else return unknownOption("wc", `-${flag}`);
         }
-      } else if (arg === '--lines') {
+      } else if (arg === "--lines") {
         showLines = true;
-      } else if (arg === '--words') {
+      } else if (arg === "--words") {
         showWords = true;
-      } else if (arg === '--bytes' || arg === '--chars') {
+      } else if (arg === "--bytes" || arg === "--chars") {
         showChars = true;
-      } else if (arg.startsWith('--')) {
-        return unknownOption('wc', arg);
+      } else if (arg.startsWith("--")) {
+        return unknownOption("wc", arg);
       } else {
         files.push(arg);
       }
@@ -58,14 +58,14 @@ export const wcCommand: Command = {
     if (files.length === 0) {
       const stats = countStats(ctx.stdin);
       return {
-        stdout: formatStats(stats, showLines, showWords, showChars, '') + '\n',
-        stderr: '',
+        stdout: `${formatStats(stats, showLines, showWords, showChars, "")}\n`,
+        stderr: "",
         exitCode: 0,
       };
     }
 
-    let stdout = '';
-    let stderr = '';
+    let stdout = "";
+    let stderr = "";
     let exitCode = 0;
     let totalLines = 0;
     let totalWords = 0;
@@ -81,7 +81,7 @@ export const wcCommand: Command = {
         totalWords += stats.words;
         totalChars += stats.chars;
 
-        stdout += formatStats(stats, showLines, showWords, showChars, file) + '\n';
+        stdout += `${formatStats(stats, showLines, showWords, showChars, file)}\n`;
       } catch {
         stderr += `wc: ${file}: No such file or directory\n`;
         exitCode = 1;
@@ -90,24 +90,28 @@ export const wcCommand: Command = {
 
     // Show total for multiple files
     if (files.length > 1) {
-      stdout += formatStats(
+      stdout += `${formatStats(
         { lines: totalLines, words: totalWords, chars: totalChars },
         showLines,
         showWords,
         showChars,
-        'total'
-      ) + '\n';
+        "total",
+      )}\n`;
     }
 
     return { stdout, stderr, exitCode };
   },
 };
 
-function countStats(content: string): { lines: number; words: number; chars: number } {
+function countStats(content: string): {
+  lines: number;
+  words: number;
+  chars: number;
+} {
   // wc counts newline characters, not lines of text
   // empty file = 0 lines, "hello" (no \n) = 0 lines, "hello\n" = 1 line
-  const lines = content.split('\n').length - 1;
-  const words = content.split(/\s+/).filter(w => w.length > 0).length;
+  const lines = content.split("\n").length - 1;
+  const words = content.split(/\s+/).filter((w) => w.length > 0).length;
   const chars = content.length;
 
   return { lines, words, chars };
@@ -118,18 +122,18 @@ function formatStats(
   showLines: boolean,
   showWords: boolean,
   showChars: boolean,
-  filename: string
+  filename: string,
 ): string {
   // Real wc uses 8-char fields for counts, no separator between them
   // Then a single space before filename
-  let result = '';
+  let result = "";
 
   if (showLines) result += String(stats.lines).padStart(8);
   if (showWords) result += String(stats.words).padStart(8);
   if (showChars) result += String(stats.chars).padStart(8);
 
   if (filename) {
-    result += ' ' + filename;
+    result += ` ${filename}`;
   }
 
   return result;

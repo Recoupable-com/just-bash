@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { BashEnv } from '../BashEnv.js';
+import { describe, expect, it } from "vitest";
+import { BashEnv } from "../BashEnv.js";
 
 /**
  * Advanced Agent Scenario: Refactoring Workflow
@@ -9,11 +9,11 @@ import { BashEnv } from '../BashEnv.js';
  * - Updating imports and exports
  * - Verifying no broken references remain
  */
-describe('Agent Scenario: Refactoring Workflow', () => {
+describe("Agent Scenario: Refactoring Workflow", () => {
   const createEnv = () =>
     new BashEnv({
       files: {
-        '/project/src/utils/string.ts': `export function formatUserName(first: string, last: string): string {
+        "/project/src/utils/string.ts": `export function formatUserName(first: string, last: string): string {
   return \`\${first} \${last}\`;
 }
 
@@ -25,14 +25,14 @@ export function capitalize(str: string): string {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
 `,
-        '/project/src/utils/index.ts': `export { formatUserName, capitalize } from './string';
+        "/project/src/utils/index.ts": `export { formatUserName, capitalize } from './string';
 export { validateEmail } from './validation';
 `,
-        '/project/src/utils/validation.ts': `export function validateEmail(email: string): boolean {
+        "/project/src/utils/validation.ts": `export function validateEmail(email: string): boolean {
   return email.includes('@') && email.includes('.');
 }
 `,
-        '/project/src/components/UserCard.tsx': `import { formatUserName, capitalize } from '../utils';
+        "/project/src/components/UserCard.tsx": `import { formatUserName, capitalize } from '../utils';
 
 interface UserCardProps {
   firstName: string;
@@ -44,13 +44,13 @@ export function UserCard({ firstName, lastName }: UserCardProps) {
   return <div>{capitalize(displayName)}</div>;
 }
 `,
-        '/project/src/components/UserList.tsx': `import { formatUserName } from '../utils/string';
+        "/project/src/components/UserList.tsx": `import { formatUserName } from '../utils/string';
 
 export function UserList({ users }) {
   return users.map(u => formatUserName(u.first, u.last));
 }
 `,
-        '/project/src/services/user.ts': `import { formatUserName } from '../utils/string';
+        "/project/src/services/user.ts": `import { formatUserName } from '../utils/string';
 import { validateEmail } from '../utils/validation';
 
 export class UserService {
@@ -59,7 +59,7 @@ export class UserService {
   }
 }
 `,
-        '/project/src/tests/string.test.ts': `import { formatUserName, capitalize } from '../utils/string';
+        "/project/src/tests/string.test.ts": `import { formatUserName, capitalize } from '../utils/string';
 
 describe('formatUserName', () => {
   it('formats full name', () => {
@@ -74,13 +74,17 @@ describe('capitalize', () => {
 });
 `,
       },
-      cwd: '/project',
+      cwd: "/project",
     });
 
-  it('should find all files containing the function to rename', async () => {
+  it("should find all files containing the function to rename", async () => {
     const env = createEnv();
-    const result = await env.exec('grep -r "formatUserName" /project/src --include="*.ts" --include="*.tsx"');
-    expect(result.stdout).toBe(`/project/src/components/UserCard.tsx:import { formatUserName, capitalize } from '../utils';
+    const result = await env.exec(
+      'grep -r "formatUserName" /project/src --include="*.ts" --include="*.tsx"',
+    );
+    expect(
+      result.stdout,
+    ).toBe(`/project/src/components/UserCard.tsx:import { formatUserName, capitalize } from '../utils';
 /project/src/components/UserCard.tsx:  const displayName = formatUserName(firstName, lastName);
 /project/src/components/UserList.tsx:import { formatUserName } from '../utils/string';
 /project/src/components/UserList.tsx:  return users.map(u => formatUserName(u.first, u.last));
@@ -96,7 +100,7 @@ describe('capitalize', () => {
     expect(result.exitCode).toBe(0);
   });
 
-  it('should count occurrences per file', async () => {
+  it("should count occurrences per file", async () => {
     const env = createEnv();
     const result = await env.exec('grep -r -c "formatUserName" /project/src');
     expect(result.stdout).toBe(`/project/src/components/UserCard.tsx:2
@@ -110,20 +114,28 @@ describe('capitalize', () => {
     expect(result.exitCode).toBe(0);
   });
 
-  it('should find export statements to update', async () => {
+  it("should find export statements to update", async () => {
     const env = createEnv();
-    const result = await env.exec('grep -r "export.*formatUserName" /project/src');
-    expect(result.stdout).toBe(`/project/src/utils/index.ts:export { formatUserName, capitalize } from './string';
+    const result = await env.exec(
+      'grep -r "export.*formatUserName" /project/src',
+    );
+    expect(
+      result.stdout,
+    ).toBe(`/project/src/utils/index.ts:export { formatUserName, capitalize } from './string';
 /project/src/utils/string.ts:export function formatUserName(first: string, last: string): string {
 /project/src/utils/string.ts:export function formatUserName_deprecated(name: string): string {
 `);
     expect(result.exitCode).toBe(0);
   });
 
-  it('should find import statements to update', async () => {
+  it("should find import statements to update", async () => {
     const env = createEnv();
-    const result = await env.exec('grep -r "import.*formatUserName" /project/src');
-    expect(result.stdout).toBe(`/project/src/components/UserCard.tsx:import { formatUserName, capitalize } from '../utils';
+    const result = await env.exec(
+      'grep -r "import.*formatUserName" /project/src',
+    );
+    expect(
+      result.stdout,
+    ).toBe(`/project/src/components/UserCard.tsx:import { formatUserName, capitalize } from '../utils';
 /project/src/components/UserList.tsx:import { formatUserName } from '../utils/string';
 /project/src/services/user.ts:import { formatUserName } from '../utils/string';
 /project/src/tests/string.test.ts:import { formatUserName, capitalize } from '../utils/string';
@@ -131,58 +143,74 @@ describe('capitalize', () => {
     expect(result.exitCode).toBe(0);
   });
 
-  it('should perform the rename using sed', async () => {
+  it("should perform the rename using sed", async () => {
     const env = createEnv();
 
     // Rename in the source file
-    await env.exec("sed 's/formatUserName/formatFullName/g' /project/src/utils/string.ts > /project/src/utils/string.ts.new");
-    await env.exec('mv /project/src/utils/string.ts.new /project/src/utils/string.ts');
+    await env.exec(
+      "sed 's/formatUserName/formatFullName/g' /project/src/utils/string.ts > /project/src/utils/string.ts.new",
+    );
+    await env.exec(
+      "mv /project/src/utils/string.ts.new /project/src/utils/string.ts",
+    );
 
     // Verify the change
-    const result = await env.exec('grep "formatFullName" /project/src/utils/string.ts');
-    expect(result.stdout).toBe(`export function formatFullName(first: string, last: string): string {
+    const result = await env.exec(
+      'grep "formatFullName" /project/src/utils/string.ts',
+    );
+    expect(
+      result.stdout,
+    ).toBe(`export function formatFullName(first: string, last: string): string {
 export function formatFullName_deprecated(name: string): string {
 `);
     expect(result.exitCode).toBe(0);
   });
 
-  it('should verify no orphaned references after full rename', async () => {
+  it("should verify no orphaned references after full rename", async () => {
     const env = createEnv();
 
     // Simulate full rename across all files
     const files = [
-      '/project/src/utils/string.ts',
-      '/project/src/utils/index.ts',
-      '/project/src/components/UserCard.tsx',
-      '/project/src/components/UserList.tsx',
-      '/project/src/services/user.ts',
-      '/project/src/tests/string.test.ts',
+      "/project/src/utils/string.ts",
+      "/project/src/utils/index.ts",
+      "/project/src/components/UserCard.tsx",
+      "/project/src/components/UserList.tsx",
+      "/project/src/services/user.ts",
+      "/project/src/tests/string.test.ts",
     ];
 
     for (const file of files) {
-      await env.exec(`sed 's/formatUserName/formatFullName/g' ${file} > ${file}.new`);
+      await env.exec(
+        `sed 's/formatUserName/formatFullName/g' ${file} > ${file}.new`,
+      );
       await env.exec(`mv ${file}.new ${file}`);
     }
 
     // Verify old name no longer exists (except in _deprecated suffix)
-    const result = await env.exec('grep -r "formatUserName[^_]" /project/src || echo "No orphaned references"');
-    expect(result.stdout).toBe('No orphaned references\n');
+    const result = await env.exec(
+      'grep -r "formatUserName[^_]" /project/src || echo "No orphaned references"',
+    );
+    expect(result.stdout).toBe("No orphaned references\n");
     expect(result.exitCode).toBe(0);
   });
 
-  it('should find deprecated functions for cleanup', async () => {
+  it("should find deprecated functions for cleanup", async () => {
     const env = createEnv();
     const result = await env.exec('grep -rn "_deprecated" /project/src');
-    expect(result.stdout).toBe('/project/src/utils/string.ts:5:export function formatUserName_deprecated(name: string): string {\n');
+    expect(result.stdout).toBe(
+      "/project/src/utils/string.ts:5:export function formatUserName_deprecated(name: string): string {\n",
+    );
     expect(result.exitCode).toBe(0);
   });
 
-  it('should analyze function usage patterns', async () => {
+  it("should analyze function usage patterns", async () => {
     const env = createEnv();
 
     // Find all function calls (simplified pattern)
     const result = await env.exec('grep -r "formatUserName(" /project/src');
-    expect(result.stdout).toBe(`/project/src/components/UserCard.tsx:  const displayName = formatUserName(firstName, lastName);
+    expect(
+      result.stdout,
+    ).toBe(`/project/src/components/UserCard.tsx:  const displayName = formatUserName(firstName, lastName);
 /project/src/components/UserList.tsx:  return users.map(u => formatUserName(u.first, u.last));
 /project/src/services/user.ts:    return formatUserName(user.first, user.last);
 /project/src/tests/string.test.ts:    expect(formatUserName('John', 'Doe')).toBe('John Doe');
@@ -191,9 +219,11 @@ export function formatFullName_deprecated(name: string): string {
     expect(result.exitCode).toBe(0);
   });
 
-  it('should list all TypeScript/TSX files in project', async () => {
+  it("should list all TypeScript/TSX files in project", async () => {
     const env = createEnv();
-    const result = await env.exec('find /project/src -name "*.ts" -o -name "*.tsx" | sort');
+    const result = await env.exec(
+      'find /project/src -name "*.ts" -o -name "*.tsx" | sort',
+    );
     expect(result.stdout).toBe(`/project/src/components/UserCard.tsx
 /project/src/components/UserList.tsx
 /project/src/services/user.ts
@@ -205,10 +235,12 @@ export function formatFullName_deprecated(name: string): string {
     expect(result.exitCode).toBe(0);
   });
 
-  it('should count total lines of code to refactor', async () => {
+  it("should count total lines of code to refactor", async () => {
     const env = createEnv();
-    const result = await env.exec('cat /project/src/utils/string.ts /project/src/components/UserCard.tsx /project/src/components/UserList.tsx | wc -l');
-    expect(result.stdout).toBe('      27\n');
+    const result = await env.exec(
+      "cat /project/src/utils/string.ts /project/src/components/UserCard.tsx /project/src/components/UserList.tsx | wc -l",
+    );
+    expect(result.stdout).toBe("      27\n");
     expect(result.exitCode).toBe(0);
   });
 });

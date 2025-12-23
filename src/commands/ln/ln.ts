@@ -1,20 +1,20 @@
-import { Command, CommandContext, ExecResult } from '../../types.js';
-import { hasHelpFlag, showHelp } from '../help.js';
+import type { Command, CommandContext, ExecResult } from "../../types.js";
+import { hasHelpFlag, showHelp } from "../help.js";
 
 const lnHelp = {
-  name: 'ln',
-  summary: 'make links between files',
-  usage: 'ln [OPTIONS] TARGET LINK_NAME',
+  name: "ln",
+  summary: "make links between files",
+  usage: "ln [OPTIONS] TARGET LINK_NAME",
   options: [
-    '-s      create a symbolic link instead of a hard link',
-    '-f      remove existing destination files',
-    '-n      treat LINK_NAME as a normal file if it is a symbolic link to a directory',
-    '    --help display this help and exit',
+    "-s      create a symbolic link instead of a hard link",
+    "-f      remove existing destination files",
+    "-n      treat LINK_NAME as a normal file if it is a symbolic link to a directory",
+    "    --help display this help and exit",
   ],
 };
 
 export const lnCommand: Command = {
-  name: 'ln',
+  name: "ln",
 
   async execute(args: string[], ctx: CommandContext): Promise<ExecResult> {
     if (hasHelpFlag(args)) {
@@ -26,33 +26,37 @@ export const lnCommand: Command = {
     let argIdx = 0;
 
     // Parse options
-    while (argIdx < args.length && args[argIdx].startsWith('-')) {
+    while (argIdx < args.length && args[argIdx].startsWith("-")) {
       const arg = args[argIdx];
-      if (arg === '-s' || arg === '--symbolic') {
+      if (arg === "-s" || arg === "--symbolic") {
         symbolic = true;
         argIdx++;
-      } else if (arg === '-f' || arg === '--force') {
+      } else if (arg === "-f" || arg === "--force") {
         force = true;
         argIdx++;
-      } else if (arg === '-n' || arg === '--no-dereference') {
+      } else if (arg === "-n" || arg === "--no-dereference") {
         // For now, just accept the flag but don't implement special behavior
         argIdx++;
-      } else if (arg === '-sf' || arg === '-fs') {
+      } else if (arg === "-sf" || arg === "-fs") {
         symbolic = true;
         force = true;
         argIdx++;
-      } else if (arg === '--') {
+      } else if (arg === "--") {
         argIdx++;
         break;
       } else {
-        return { stdout: '', stderr: `ln: invalid option -- '${arg.slice(1)}'\n`, exitCode: 1 };
+        return {
+          stdout: "",
+          stderr: `ln: invalid option -- '${arg.slice(1)}'\n`,
+          exitCode: 1,
+        };
       }
     }
 
     const remaining = args.slice(argIdx);
 
     if (remaining.length < 2) {
-      return { stdout: '', stderr: 'ln: missing file operand\n', exitCode: 1 };
+      return { stdout: "", stderr: "ln: missing file operand\n", exitCode: 1 };
     }
 
     const target = remaining[0];
@@ -65,10 +69,18 @@ export const lnCommand: Command = {
         try {
           await ctx.fs.rm(linkPath, { force: true });
         } catch {
-          return { stdout: '', stderr: `ln: cannot remove '${linkName}': Permission denied\n`, exitCode: 1 };
+          return {
+            stdout: "",
+            stderr: `ln: cannot remove '${linkName}': Permission denied\n`,
+            exitCode: 1,
+          };
         }
       } else {
-        return { stdout: '', stderr: `ln: failed to create ${symbolic ? 'symbolic ' : ''}link '${linkName}': File exists\n`, exitCode: 1 };
+        return {
+          stdout: "",
+          stderr: `ln: failed to create ${symbolic ? "symbolic " : ""}link '${linkName}': File exists\n`,
+          exitCode: 1,
+        };
       }
     }
 
@@ -82,18 +94,26 @@ export const lnCommand: Command = {
         const targetPath = ctx.fs.resolvePath(ctx.cwd, target);
         // Check that target exists
         if (!(await ctx.fs.exists(targetPath))) {
-          return { stdout: '', stderr: `ln: failed to access '${target}': No such file or directory\n`, exitCode: 1 };
+          return {
+            stdout: "",
+            stderr: `ln: failed to access '${target}': No such file or directory\n`,
+            exitCode: 1,
+          };
         }
         await ctx.fs.link(targetPath, linkPath);
       }
     } catch (e) {
       const err = e as Error;
-      if (err.message.includes('EPERM')) {
-        return { stdout: '', stderr: `ln: '${target}': hard link not allowed for directory\n`, exitCode: 1 };
+      if (err.message.includes("EPERM")) {
+        return {
+          stdout: "",
+          stderr: `ln: '${target}': hard link not allowed for directory\n`,
+          exitCode: 1,
+        };
       }
-      return { stdout: '', stderr: `ln: ${err.message}\n`, exitCode: 1 };
+      return { stdout: "", stderr: `ln: ${err.message}\n`, exitCode: 1 };
     }
 
-    return { stdout: '', stderr: '', exitCode: 0 };
+    return { stdout: "", stderr: "", exitCode: 0 };
   },
 };

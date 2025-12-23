@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { BashEnv } from '../BashEnv.js';
+import { describe, expect, it } from "vitest";
+import { BashEnv } from "../BashEnv.js";
 
 /**
  * Advanced Agent Scenario: Dependency Analysis
@@ -10,18 +10,18 @@ import { BashEnv } from '../BashEnv.js';
  * - Identifying unused exports
  * - Understanding module coupling
  */
-describe('Agent Scenario: Dependency Analysis', () => {
+describe("Agent Scenario: Dependency Analysis", () => {
   const createEnv = () =>
     new BashEnv({
       files: {
-        '/project/src/index.ts': `import { App } from './app';
+        "/project/src/index.ts": `import { App } from './app';
 import { logger } from './utils/logger';
 
 logger.info('Starting application');
 const app = new App();
 app.start();
 `,
-        '/project/src/app.ts': `import { Router } from './router';
+        "/project/src/app.ts": `import { Router } from './router';
 import { Database } from './db';
 import { logger } from './utils/logger';
 import { Config } from './config';
@@ -41,7 +41,7 @@ export class App {
   }
 }
 `,
-        '/project/src/router.ts': `import { Database } from './db';
+        "/project/src/router.ts": `import { Database } from './db';
 import { UserController } from './controllers/user';
 import { PostController } from './controllers/post';
 import { logger } from './utils/logger';
@@ -56,7 +56,7 @@ export class Router {
   }
 }
 `,
-        '/project/src/db.ts': `import { logger } from './utils/logger';
+        "/project/src/db.ts": `import { logger } from './utils/logger';
 import { Config } from './config';
 
 export class Database {
@@ -73,7 +73,7 @@ export function createConnection() {
   return new Database(Config.dbUrl);
 }
 `,
-        '/project/src/config.ts': `export const Config = {
+        "/project/src/config.ts": `export const Config = {
   port: 3000,
   dbUrl: 'postgresql://localhost:5432/app',
   logLevel: 'info',
@@ -88,7 +88,7 @@ export function getEnv(key: string): string | undefined {
   return process.env[key];
 }
 `,
-        '/project/src/utils/logger.ts': `import { Config } from '../config';
+        "/project/src/utils/logger.ts": `import { Config } from '../config';
 
 export const logger = {
   info: (msg: string) => console.log(\`[INFO] \${msg}\`),
@@ -102,7 +102,7 @@ export function createLogger(name: string) {
   };
 }
 `,
-        '/project/src/utils/helpers.ts': `export function formatDate(date: Date): string {
+        "/project/src/utils/helpers.ts": `export function formatDate(date: Date): string {
   return date.toISOString();
 }
 
@@ -118,7 +118,7 @@ export function debounce(fn: Function, ms: number) {
   };
 }
 `,
-        '/project/src/controllers/user.ts': `import { Database } from '../db';
+        "/project/src/controllers/user.ts": `import { Database } from '../db';
 import { logger } from '../utils/logger';
 import { formatDate } from '../utils/helpers';
 
@@ -131,7 +131,7 @@ export class UserController {
   }
 }
 `,
-        '/project/src/controllers/post.ts': `import { Database } from '../db';
+        "/project/src/controllers/post.ts": `import { Database } from '../db';
 import { logger } from '../utils/logger';
 import { slugify, formatDate } from '../utils/helpers';
 
@@ -145,7 +145,7 @@ export class PostController {
   }
 }
 `,
-        '/project/src/models/user.ts': `export interface User {
+        "/project/src/models/user.ts": `export interface User {
   id: string;
   name: string;
   email: string;
@@ -153,7 +153,7 @@ export class PostController {
 
 export type UserRole = 'admin' | 'user' | 'guest';
 `,
-        '/project/src/models/post.ts': `import { User } from './user';
+        "/project/src/models/post.ts": `import { User } from './user';
 
 export interface Post {
   id: string;
@@ -163,12 +163,14 @@ export interface Post {
 }
 `,
       },
-      cwd: '/project',
+      cwd: "/project",
     });
 
-  it('should find all import statements in the codebase', async () => {
+  it("should find all import statements in the codebase", async () => {
     const env = createEnv();
-    const result = await env.exec('grep -rh "^import" /project/src | sort | uniq');
+    const result = await env.exec(
+      'grep -rh "^import" /project/src | sort | uniq',
+    );
     expect(result.stdout).toBe(`import { App } from './app';
 import { Config } from '../config';
 import { Config } from './config';
@@ -186,9 +188,11 @@ import { UserController } from './controllers/user';
     expect(result.exitCode).toBe(0);
   });
 
-  it('should find all export statements', async () => {
+  it("should find all export statements", async () => {
     const env = createEnv();
-    const result = await env.exec('grep -rh "^export" /project/src | sort | uniq');
+    const result = await env.exec(
+      'grep -rh "^export" /project/src | sort | uniq',
+    );
     expect(result.stdout).toBe(`export class App {
 export class Database {
 export class PostController {
@@ -210,9 +214,11 @@ export type UserRole = 'admin' | 'user' | 'guest';
     expect(result.exitCode).toBe(0);
   });
 
-  it('should find which modules import logger', async () => {
+  it("should find which modules import logger", async () => {
     const env = createEnv();
-    const result = await env.exec('grep -rl "import.*logger" /project/src --include="*.ts" | sort');
+    const result = await env.exec(
+      'grep -rl "import.*logger" /project/src --include="*.ts" | sort',
+    );
     expect(result.stdout).toBe(`/project/src/app.ts
 /project/src/controllers/post.ts
 /project/src/controllers/user.ts
@@ -223,9 +229,11 @@ export type UserRole = 'admin' | 'user' | 'guest';
     expect(result.exitCode).toBe(0);
   });
 
-  it('should find which modules import Database', async () => {
+  it("should find which modules import Database", async () => {
     const env = createEnv();
-    const result = await env.exec('grep -rl "import.*Database" /project/src --include="*.ts" | sort');
+    const result = await env.exec(
+      'grep -rl "import.*Database" /project/src --include="*.ts" | sort',
+    );
     expect(result.stdout).toBe(`/project/src/app.ts
 /project/src/controllers/post.ts
 /project/src/controllers/user.ts
@@ -234,28 +242,34 @@ export type UserRole = 'admin' | 'user' | 'guest';
     expect(result.exitCode).toBe(0);
   });
 
-  it('should find unused exports (exports not imported elsewhere)', async () => {
+  it("should find unused exports (exports not imported elsewhere)", async () => {
     const env = createEnv();
 
     // Find FeatureFlags export
-    const featureFlagsExport = await env.exec('grep "FeatureFlags" /project/src/config.ts');
+    const featureFlagsExport = await env.exec(
+      'grep "FeatureFlags" /project/src/config.ts',
+    );
     expect(featureFlagsExport.stdout).toBe(`export const FeatureFlags = {
 `);
 
     // Check if FeatureFlags is imported anywhere
-    const featureFlagsImport = await env.exec('grep -r "FeatureFlags" /project/src --include="*.ts" | grep -v config.ts || echo "Not imported"');
-    expect(featureFlagsImport.stdout).toBe('Not imported\n');
+    const featureFlagsImport = await env.exec(
+      'grep -r "FeatureFlags" /project/src --include="*.ts" | grep -v config.ts || echo "Not imported"',
+    );
+    expect(featureFlagsImport.stdout).toBe("Not imported\n");
   });
 
-  it('should find unused helper functions', async () => {
+  it("should find unused helper functions", async () => {
     const env = createEnv();
 
     // debounce is exported but never imported
-    const debounceImport = await env.exec('grep -r "debounce" /project/src --include="*.ts" | grep -v helpers.ts || echo "Not used"');
-    expect(debounceImport.stdout).toBe('Not used\n');
+    const debounceImport = await env.exec(
+      'grep -r "debounce" /project/src --include="*.ts" | grep -v helpers.ts || echo "Not used"',
+    );
+    expect(debounceImport.stdout).toBe("Not used\n");
   });
 
-  it('should map the dependency tree from index.ts', async () => {
+  it("should map the dependency tree from index.ts", async () => {
     const env = createEnv();
 
     // index.ts imports
@@ -274,24 +288,30 @@ import { Config } from './config';
     expect(appImports.exitCode).toBe(0);
   });
 
-  it('should find potential circular dependencies', async () => {
+  it("should find potential circular dependencies", async () => {
     const env = createEnv();
 
     // config.ts is imported by logger.ts (using case-insensitive match to find both lines)
-    const loggerImportsConfig = await env.exec('grep -i "config" /project/src/utils/logger.ts');
+    const loggerImportsConfig = await env.exec(
+      'grep -i "config" /project/src/utils/logger.ts',
+    );
     expect(loggerImportsConfig.stdout).toBe(`import { Config } from '../config';
   debug: (msg: string) => Config.logLevel === 'debug' && console.log(\`[DEBUG] \${msg}\`),
 `);
 
     // Check if config.ts imports logger (would be circular)
-    const configImportsLogger = await env.exec('grep "logger" /project/src/config.ts || echo "No circular dependency"');
-    expect(configImportsLogger.stdout).toBe('No circular dependency\n');
+    const configImportsLogger = await env.exec(
+      'grep "logger" /project/src/config.ts || echo "No circular dependency"',
+    );
+    expect(configImportsLogger.stdout).toBe("No circular dependency\n");
   });
 
-  it('should count imports per module to find highly coupled modules', async () => {
+  it("should count imports per module to find highly coupled modules", async () => {
     const env = createEnv();
     // Use grep -c recursive with --include to count imports per file
-    const result = await env.exec('grep -rc "^import" /project/src --include="*.ts" | sort -t: -k2 -rn | head -5');
+    const result = await env.exec(
+      'grep -rc "^import" /project/src --include="*.ts" | sort -t: -k2 -rn | head -5',
+    );
     expect(result.stdout).toBe(`/project/src/router.ts:4
 /project/src/app.ts:4
 /project/src/controllers/user.ts:3
@@ -301,27 +321,35 @@ import { Config } from './config';
     expect(result.exitCode).toBe(0);
   });
 
-  it('should find all model type definitions', async () => {
+  it("should find all model type definitions", async () => {
     const env = createEnv();
-    const result = await env.exec('grep -rn "^export interface\\|^export type" /project/src/models');
-    expect(result.stdout).toBe(`/project/src/models/post.ts:3:export interface Post {
+    const result = await env.exec(
+      'grep -rn "^export interface\\|^export type" /project/src/models',
+    );
+    expect(
+      result.stdout,
+    ).toBe(`/project/src/models/post.ts:3:export interface Post {
 /project/src/models/user.ts:1:export interface User {
 /project/src/models/user.ts:7:export type UserRole = 'admin' | 'user' | 'guest';
 `);
     expect(result.exitCode).toBe(0);
   });
 
-  it('should identify the utils directory as a shared dependency hub', async () => {
+  it("should identify the utils directory as a shared dependency hub", async () => {
     const env = createEnv();
 
     // Count how many files import from utils
-    const result = await env.exec('grep -rl "from.*utils" /project/src | wc -l');
-    expect(result.stdout.trim()).toBe('6');
+    const result = await env.exec(
+      'grep -rl "from.*utils" /project/src | wc -l',
+    );
+    expect(result.stdout.trim()).toBe("6");
   });
 
-  it('should find controllers and their database dependencies', async () => {
+  it("should find controllers and their database dependencies", async () => {
     const env = createEnv();
-    const result = await env.exec('grep -l "Database" /project/src/controllers/*.ts');
+    const result = await env.exec(
+      'grep -l "Database" /project/src/controllers/*.ts',
+    );
     expect(result.stdout).toBe(`/project/src/controllers/post.ts
 /project/src/controllers/user.ts
 `);

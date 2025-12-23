@@ -1,5 +1,5 @@
 import { BashEnv } from "../BashEnv.js";
-import { IFileSystem } from "../fs-interface.js";
+import type { IFileSystem } from "../fs-interface.js";
 import { Command, CommandFinished } from "./Command.js";
 
 export interface SandboxOptions {
@@ -19,11 +19,9 @@ export interface WriteFilesInput {
 
 export class Sandbox {
   private bashEnv: BashEnv;
-  private _cwd: string;
 
-  private constructor(bashEnv: BashEnv, cwd: string) {
+  private constructor(bashEnv: BashEnv) {
     this.bashEnv = bashEnv;
-    this._cwd = cwd;
   }
 
   static async create(opts?: SandboxOptions): Promise<Sandbox> {
@@ -36,12 +34,12 @@ export class Sandbox {
       maxCommandCount: opts?.maxCommandCount,
       maxLoopIterations: opts?.maxLoopIterations,
     });
-    return new Sandbox(bashEnv, opts?.cwd ?? "/");
+    return new Sandbox(bashEnv);
   }
 
   async runCommand(
     cmd: string,
-    opts?: { cwd?: string; env?: Record<string, string> }
+    opts?: { cwd?: string; env?: Record<string, string> },
   ): Promise<Command> {
     // If cwd option is provided, cd to it first
     if (opts?.cwd) {
@@ -99,7 +97,7 @@ export class Sandbox {
     // No-op for local simulation
   }
 
-  async extendTimeout(ms: number): Promise<void> {
+  async extendTimeout(_ms: number): Promise<void> {
     // No-op for local simulation
   }
 

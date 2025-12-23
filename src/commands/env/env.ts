@@ -1,17 +1,15 @@
-import { Command, CommandContext, ExecResult } from '../../types.js';
-import { hasHelpFlag, showHelp } from '../help.js';
+import type { Command, CommandContext, ExecResult } from "../../types.js";
+import { hasHelpFlag, showHelp } from "../help.js";
 
 const envHelp = {
-  name: 'env',
-  summary: 'print environment variables',
-  usage: 'env [OPTION]... [NAME=VALUE]...',
-  options: [
-    '    --help       display this help and exit',
-  ],
+  name: "env",
+  summary: "print environment variables",
+  usage: "env [OPTION]... [NAME=VALUE]...",
+  options: ["    --help       display this help and exit"],
 };
 
 export const envCommand: Command = {
-  name: 'env',
+  name: "env",
 
   async execute(args: string[], ctx: CommandContext): Promise<ExecResult> {
     if (hasHelpFlag(args)) {
@@ -25,31 +23,29 @@ export const envCommand: Command = {
     }
 
     return {
-      stdout: lines.join('\n') + (lines.length > 0 ? '\n' : ''),
-      stderr: '',
+      stdout: lines.join("\n") + (lines.length > 0 ? "\n" : ""),
+      stderr: "",
       exitCode: 0,
     };
   },
 };
 
 const printenvHelp = {
-  name: 'printenv',
-  summary: 'print all or part of environment',
-  usage: 'printenv [OPTION]... [VARIABLE]...',
-  options: [
-    '    --help       display this help and exit',
-  ],
+  name: "printenv",
+  summary: "print all or part of environment",
+  usage: "printenv [OPTION]... [VARIABLE]...",
+  options: ["    --help       display this help and exit"],
 };
 
 export const printenvCommand: Command = {
-  name: 'printenv',
+  name: "printenv",
 
   async execute(args: string[], ctx: CommandContext): Promise<ExecResult> {
     if (hasHelpFlag(args)) {
       return showHelp(printenvHelp);
     }
 
-    const vars = args.filter(arg => !arg.startsWith('-'));
+    const vars = args.filter((arg) => !arg.startsWith("-"));
 
     if (vars.length === 0) {
       // Print all
@@ -58,8 +54,8 @@ export const printenvCommand: Command = {
         lines.push(`${key}=${value}`);
       }
       return {
-        stdout: lines.join('\n') + (lines.length > 0 ? '\n' : ''),
-        stderr: '',
+        stdout: lines.join("\n") + (lines.length > 0 ? "\n" : ""),
+        stderr: "",
         exitCode: 0,
       };
     }
@@ -76,8 +72,8 @@ export const printenvCommand: Command = {
     }
 
     return {
-      stdout: lines.join('\n') + (lines.length > 0 ? '\n' : ''),
-      stderr: '',
+      stdout: lines.join("\n") + (lines.length > 0 ? "\n" : ""),
+      stderr: "",
       exitCode,
     };
   },

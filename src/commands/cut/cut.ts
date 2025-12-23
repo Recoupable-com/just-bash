@@ -1,5 +1,5 @@
-import { Command, CommandContext, ExecResult } from '../../types.js';
-import { unknownOption } from '../help.js';
+import type { Command, CommandContext, ExecResult } from "../../types.js";
+import { unknownOption } from "../help.js";
 
 interface CutRange {
   start: number;
@@ -8,11 +8,11 @@ interface CutRange {
 
 function parseRange(spec: string): CutRange[] {
   const ranges: CutRange[] = [];
-  const parts = spec.split(',');
+  const parts = spec.split(",");
 
   for (const part of parts) {
-    if (part.includes('-')) {
-      const [start, end] = part.split('-');
+    if (part.includes("-")) {
+      const [start, end] = part.split("-");
       ranges.push({
         start: start ? parseInt(start, 10) : 1,
         end: end ? parseInt(end, 10) : null,
@@ -44,9 +44,9 @@ function extractByRanges(items: string[], ranges: CutRange[]): string[] {
 }
 
 export const cutCommand: Command = {
-  name: 'cut',
+  name: "cut",
   async execute(args: string[], ctx: CommandContext): Promise<ExecResult> {
-    let delimiter = '\t';
+    let delimiter = "\t";
     let fieldSpec: string | null = null;
     let charSpec: string | null = null;
     const files: string[] = [];
@@ -54,22 +54,22 @@ export const cutCommand: Command = {
     // Parse arguments
     for (let i = 0; i < args.length; i++) {
       const arg = args[i];
-      if (arg === '-d') {
-        delimiter = args[++i] || '\t';
-      } else if (arg.startsWith('-d')) {
+      if (arg === "-d") {
+        delimiter = args[++i] || "\t";
+      } else if (arg.startsWith("-d")) {
         delimiter = arg.slice(2);
-      } else if (arg === '-f') {
+      } else if (arg === "-f") {
         fieldSpec = args[++i];
-      } else if (arg.startsWith('-f')) {
+      } else if (arg.startsWith("-f")) {
         fieldSpec = arg.slice(2);
-      } else if (arg === '-c') {
+      } else if (arg === "-c") {
         charSpec = args[++i];
-      } else if (arg.startsWith('-c')) {
+      } else if (arg.startsWith("-c")) {
         charSpec = arg.slice(2);
-      } else if (arg.startsWith('--')) {
-        return unknownOption('cut', arg);
-      } else if (arg.startsWith('-')) {
-        return unknownOption('cut', arg);
+      } else if (arg.startsWith("--")) {
+        return unknownOption("cut", arg);
+      } else if (arg.startsWith("-")) {
+        return unknownOption("cut", arg);
       } else {
         files.push(arg);
       }
@@ -77,13 +77,14 @@ export const cutCommand: Command = {
 
     if (!fieldSpec && !charSpec) {
       return {
-        stdout: '',
-        stderr: 'cut: you must specify a list of bytes, characters, or fields\n',
+        stdout: "",
+        stderr:
+          "cut: you must specify a list of bytes, characters, or fields\n",
         exitCode: 1,
       };
     }
 
-    let content = '';
+    let content = "";
 
     // Read from files or stdin
     if (files.length === 0) {
@@ -95,7 +96,7 @@ export const cutCommand: Command = {
           content += await ctx.fs.readFile(filePath);
         } catch {
           return {
-            stdout: '',
+            stdout: "",
             stderr: `cut: ${file}: No such file or directory\n`,
             exitCode: 1,
           };
@@ -104,18 +105,18 @@ export const cutCommand: Command = {
     }
 
     // Split into lines
-    let lines = content.split('\n');
-    if (lines.length > 0 && lines[lines.length - 1] === '') {
+    const lines = content.split("\n");
+    if (lines.length > 0 && lines[lines.length - 1] === "") {
       lines.pop();
     }
 
-    const ranges = parseRange(fieldSpec || charSpec || '1');
-    let output = '';
+    const ranges = parseRange(fieldSpec || charSpec || "1");
+    let output = "";
 
     for (const line of lines) {
       if (charSpec) {
         // Character mode
-        const chars = line.split('');
+        const chars = line.split("");
         const selected: string[] = [];
         for (const range of ranges) {
           const start = range.start - 1;
@@ -126,15 +127,15 @@ export const cutCommand: Command = {
             }
           }
         }
-        output += selected.join('') + '\n';
+        output += `${selected.join("")}\n`;
       } else {
         // Field mode
         const fields = line.split(delimiter);
         const selected = extractByRanges(fields, ranges);
-        output += selected.join(delimiter) + '\n';
+        output += `${selected.join(delimiter)}\n`;
       }
     }
 
-    return { stdout: output, stderr: '', exitCode: 0 };
+    return { stdout: output, stderr: "", exitCode: 0 };
   },
 };

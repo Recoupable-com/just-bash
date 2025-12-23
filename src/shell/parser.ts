@@ -12,7 +12,7 @@
  */
 
 export interface Redirection {
-  type: 'stdout' | 'stderr' | 'stdin' | 'stderr-to-stdout';
+  type: "stdout" | "stderr" | "stdin" | "stderr-to-stdout";
   target: string | null; // null for 2>&1
   append: boolean;
 }
@@ -27,7 +27,7 @@ export interface ParsedCommand {
 
 export interface ChainedCommand {
   parsed: ParsedCommand;
-  operator: '' | '&&' | '||' | ';';
+  operator: "" | "&&" | "||" | ";";
   /**
    * Number of ! operators before this pipeline segment.
    * Odd count = negate, even count = no change.
@@ -41,23 +41,23 @@ export interface Pipeline {
 }
 
 type TokenType =
-  | 'word'
-  | 'pipe'
-  | 'and'
-  | 'or'
-  | 'semicolon'
-  | 'not'
-  | 'redirect-stdout'
-  | 'redirect-stdout-append'
-  | 'redirect-stderr'
-  | 'redirect-stderr-append'
-  | 'redirect-stderr-to-stdout'
-  | 'redirect-stdin'
-  | 'if'
-  | 'then'
-  | 'elif'
-  | 'else'
-  | 'fi';
+  | "word"
+  | "pipe"
+  | "and"
+  | "or"
+  | "semicolon"
+  | "not"
+  | "redirect-stdout"
+  | "redirect-stdout-append"
+  | "redirect-stderr"
+  | "redirect-stderr-append"
+  | "redirect-stderr-to-stdout"
+  | "redirect-stdin"
+  | "if"
+  | "then"
+  | "elif"
+  | "else"
+  | "fi";
 
 interface Token {
   type: TokenType;
@@ -91,14 +91,14 @@ export class ShellParser {
   private tokenize(input: string): Token[] {
     const tokens: Token[] = [];
     let i = 0;
-    let current = '';
+    let current = "";
     let inQuote: string | null = null;
     let wasQuoted = false; // Track if current token contains any quoted content
 
     const pushWord = () => {
       if (current) {
-        tokens.push({ type: 'word', value: current, quoted: wasQuoted });
-        current = '';
+        tokens.push({ type: "word", value: current, quoted: wasQuoted });
+        current = "";
         wasQuoted = false;
       }
     };
@@ -108,14 +108,19 @@ export class ShellParser {
       const nextChar = input[i + 1];
 
       // Handle escape sequences
-      if (char === '\\' && i + 1 < input.length) {
+      if (char === "\\" && i + 1 < input.length) {
         if (inQuote === "'") {
           // In single quotes, backslash is literal
           current += char;
           i++;
         } else if (inQuote === '"') {
           // In double quotes, only certain escapes are special
-          if (nextChar === '"' || nextChar === '\\' || nextChar === '$' || nextChar === '`') {
+          if (
+            nextChar === '"' ||
+            nextChar === "\\" ||
+            nextChar === "$" ||
+            nextChar === "`"
+          ) {
             current += nextChar;
             i += 2;
           } else {
@@ -133,7 +138,7 @@ export class ShellParser {
       // Handle variable expansion (not in single quotes)
       // Note: We preserve $VAR syntax here and expand later in execution
       // This allows commands like "local x=1; echo $x" to work correctly
-      if (char === '$' && inQuote !== "'") {
+      if (char === "$" && inQuote !== "'") {
         // In double quotes, we still need to expand to handle ${VAR:-default} etc.
         // But for simple $VAR, preserve for later expansion
         if (inQuote === '"') {
@@ -172,99 +177,109 @@ export class ShellParser {
       // Handle operators and redirections (only outside quotes)
 
       // Handle 2>&1
-      if (char === '2' && input.slice(i, i + 4) === '2>&1') {
+      if (char === "2" && input.slice(i, i + 4) === "2>&1") {
         pushWord();
-        tokens.push({ type: 'redirect-stderr-to-stdout', value: '2>&1' });
+        tokens.push({ type: "redirect-stderr-to-stdout", value: "2>&1" });
         i += 4;
         continue;
       }
 
       // Handle 2>> (stderr append)
-      if (char === '2' && nextChar === '>' && input[i + 2] === '>') {
+      if (char === "2" && nextChar === ">" && input[i + 2] === ">") {
         pushWord();
-        tokens.push({ type: 'redirect-stderr-append', value: '2>>' });
+        tokens.push({ type: "redirect-stderr-append", value: "2>>" });
         i += 3;
         continue;
       }
 
       // Handle 2> (stderr)
-      if (char === '2' && nextChar === '>') {
+      if (char === "2" && nextChar === ">") {
         pushWord();
-        tokens.push({ type: 'redirect-stderr', value: '2>' });
+        tokens.push({ type: "redirect-stderr", value: "2>" });
         i += 2;
         continue;
       }
 
       // Handle >> (stdout append)
-      if (char === '>' && nextChar === '>') {
+      if (char === ">" && nextChar === ">") {
         pushWord();
-        tokens.push({ type: 'redirect-stdout-append', value: '>>' });
+        tokens.push({ type: "redirect-stdout-append", value: ">>" });
         i += 2;
         continue;
       }
 
       // Handle > (stdout)
-      if (char === '>') {
+      if (char === ">") {
         pushWord();
-        tokens.push({ type: 'redirect-stdout', value: '>' });
+        tokens.push({ type: "redirect-stdout", value: ">" });
         i++;
         continue;
       }
 
       // Handle < (stdin)
-      if (char === '<') {
+      if (char === "<") {
         pushWord();
-        tokens.push({ type: 'redirect-stdin', value: '<' });
+        tokens.push({ type: "redirect-stdin", value: "<" });
         i++;
         continue;
       }
 
       // Handle &&
-      if (char === '&' && nextChar === '&') {
+      if (char === "&" && nextChar === "&") {
         pushWord();
-        tokens.push({ type: 'and', value: '&&' });
+        tokens.push({ type: "and", value: "&&" });
         i += 2;
         continue;
       }
 
       // Handle ||
-      if (char === '|' && nextChar === '|') {
+      if (char === "|" && nextChar === "|") {
         pushWord();
-        tokens.push({ type: 'or', value: '||' });
+        tokens.push({ type: "or", value: "||" });
         i += 2;
         continue;
       }
 
       // Handle | (pipe)
-      if (char === '|') {
+      if (char === "|") {
         pushWord();
-        tokens.push({ type: 'pipe', value: '|' });
+        tokens.push({ type: "pipe", value: "|" });
         i++;
         continue;
       }
 
       // Handle ;
-      if (char === ';') {
+      if (char === ";") {
         pushWord();
-        tokens.push({ type: 'semicolon', value: ';' });
+        tokens.push({ type: "semicolon", value: ";" });
         i++;
         continue;
       }
 
       // Handle ! (negation operator) - only at start of command or after operator
-      if (char === '!' && (current === '' || tokens.length === 0 ||
-          ['and', 'or', 'semicolon', 'pipe'].includes(tokens[tokens.length - 1]?.type))) {
+      if (
+        char === "!" &&
+        (current === "" ||
+          tokens.length === 0 ||
+          ["and", "or", "semicolon", "pipe"].includes(
+            tokens[tokens.length - 1]?.type,
+          ))
+      ) {
         // Check if followed by space or end (command negation)
-        if (i + 1 >= input.length || input[i + 1] === ' ' || input[i + 1] === '\t') {
+        if (
+          i + 1 >= input.length ||
+          input[i + 1] === " " ||
+          input[i + 1] === "\t"
+        ) {
           pushWord();
-          tokens.push({ type: 'not', value: '!' });
+          tokens.push({ type: "not", value: "!" });
           i++;
           continue;
         }
       }
 
       // Handle whitespace
-      if (char === ' ' || char === '\t') {
+      if (char === " " || char === "\t") {
         pushWord();
         i++;
         continue;
@@ -282,18 +297,21 @@ export class ShellParser {
   /**
    * Expand a variable starting at position i
    */
-  private expandVariable(str: string, startIndex: number): { value: string; endIndex: number } {
+  private expandVariable(
+    str: string,
+    startIndex: number,
+  ): { value: string; endIndex: number } {
     let i = startIndex + 1; // Skip the $
 
     if (i >= str.length) {
-      return { value: '$', endIndex: i };
+      return { value: "$", endIndex: i };
     }
 
     // Handle ${VAR} and ${VAR:-default}
-    if (str[i] === '{') {
-      const closeIndex = str.indexOf('}', i);
+    if (str[i] === "{") {
+      const closeIndex = str.indexOf("}", i);
       if (closeIndex === -1) {
-        return { value: '${', endIndex: i + 1 };
+        return { value: "${", endIndex: i + 1 };
       }
       const content = str.slice(i + 1, closeIndex);
 
@@ -307,15 +325,15 @@ export class ShellParser {
         };
       }
       return {
-        value: this.env[content] ?? '',
+        value: this.env[content] ?? "",
         endIndex: closeIndex + 1,
       };
     }
 
     // Handle special variables: $@, $#, $$, $?, $!, $*
-    if ('@#$?!*'.includes(str[i])) {
+    if ("@#$?!*".includes(str[i])) {
       return {
-        value: this.env[str[i]] ?? '',
+        value: this.env[str[i]] ?? "",
         endIndex: i + 1,
       };
     }
@@ -323,13 +341,13 @@ export class ShellParser {
     // Handle positional parameters: $0, $1, $2, ...
     if (/[0-9]/.test(str[i])) {
       return {
-        value: this.env[str[i]] ?? '',
+        value: this.env[str[i]] ?? "",
         endIndex: i + 1,
       };
     }
 
     // Handle $VAR - must start with letter or underscore
-    let varName = '';
+    let varName = "";
     // First char must be letter or underscore
     if (/[A-Za-z_]/.test(str[i])) {
       varName += str[i];
@@ -342,11 +360,11 @@ export class ShellParser {
     }
 
     if (!varName) {
-      return { value: '$', endIndex: startIndex + 1 };
+      return { value: "$", endIndex: startIndex + 1 };
     }
 
     return {
-      value: this.env[varName] ?? '',
+      value: this.env[varName] ?? "",
       endIndex: i,
     };
   }
@@ -358,19 +376,20 @@ export class ShellParser {
     tokens: Token[],
     startIndex: number,
     startKeyword: string,
-    endKeyword: string
+    endKeyword: string,
   ): { text: string; endIndex: number } {
     let depth = 0;
-    let text = '';
+    let text = "";
     let i = startIndex;
 
     while (i < tokens.length) {
       const token = tokens[i];
-      const tokenText = token.type === 'word' ? token.value : this.tokenToText(token);
+      const tokenText =
+        token.type === "word" ? token.value : this.tokenToText(token);
 
-      if (token.type === 'word' && token.value === startKeyword) {
+      if (token.type === "word" && token.value === startKeyword) {
         depth++;
-      } else if (token.type === 'word' && token.value === endKeyword) {
+      } else if (token.type === "word" && token.value === endKeyword) {
         depth--;
         if (depth === 0) {
           text += tokenText;
@@ -383,10 +402,13 @@ export class ShellParser {
       // Add space after most tokens, but handle operators specially
       if (i + 1 < tokens.length) {
         const nextToken = tokens[i + 1];
-        if (token.type === 'word' && nextToken.type === 'word') {
-          text += ' ';
-        } else if (token.type !== 'semicolon' && nextToken.type !== 'semicolon') {
-          text += ' ';
+        if (token.type === "word" && nextToken.type === "word") {
+          text += " ";
+        } else if (
+          token.type !== "semicolon" &&
+          nextToken.type !== "semicolon"
+        ) {
+          text += " ";
         }
       }
 
@@ -402,17 +424,28 @@ export class ShellParser {
    */
   private tokenToText(token: Token): string {
     switch (token.type) {
-      case 'pipe': return '|';
-      case 'and': return '&&';
-      case 'or': return '||';
-      case 'semicolon': return ';';
-      case 'redirect-stdout': return '>';
-      case 'redirect-stdout-append': return '>>';
-      case 'redirect-stderr': return '2>';
-      case 'redirect-stderr-append': return '2>>';
-      case 'redirect-stderr-to-stdout': return '2>&1';
-      case 'redirect-stdin': return '<';
-      default: return token.value;
+      case "pipe":
+        return "|";
+      case "and":
+        return "&&";
+      case "or":
+        return "||";
+      case "semicolon":
+        return ";";
+      case "redirect-stdout":
+        return ">";
+      case "redirect-stdout-append":
+        return ">>";
+      case "redirect-stderr":
+        return "2>";
+      case "redirect-stderr-append":
+        return "2>>";
+      case "redirect-stderr-to-stdout":
+        return "2>&1";
+      case "redirect-stdin":
+        return "<";
+      default:
+        return token.value;
     }
   }
 
@@ -424,7 +457,7 @@ export class ShellParser {
     let currentPipeline: Pipeline = { commands: [] };
     let currentArgs: { value: string; quoted: boolean }[] = [];
     let currentRedirections: Redirection[] = [];
-    let lastOperator: '' | '&&' | '||' | ';' = '';
+    let lastOperator: "" | "&&" | "||" | ";" = "";
     let negationCount = 0; // Count of ! operators for current pipeline segment
 
     const pushCommand = () => {
@@ -444,7 +477,7 @@ export class ShellParser {
         currentRedirections = [];
         // Only reset negation after non-pipe operators (end of pipeline segment)
         // For pipes, negation applies to the whole pipeline segment
-        if (lastOperator !== '') {
+        if (lastOperator !== "") {
           negationCount = 0;
         }
       }
@@ -463,85 +496,93 @@ export class ShellParser {
       const token = tokens[i];
 
       switch (token.type) {
-        case 'word':
+        case "word":
           // Check for compound commands (if, while, for, case)
-          if (token.value === 'if' && currentArgs.length === 0) {
+          if (token.value === "if" && currentArgs.length === 0) {
             // Collect all tokens until matching 'fi'
-            const compoundCmd = this.collectCompoundCommand(tokens, i, 'if', 'fi');
+            const compoundCmd = this.collectCompoundCommand(
+              tokens,
+              i,
+              "if",
+              "fi",
+            );
             currentArgs.push({ value: compoundCmd.text, quoted: true });
             i = compoundCmd.endIndex;
             continue;
           }
-          currentArgs.push({ value: token.value, quoted: token.quoted ?? false });
+          currentArgs.push({
+            value: token.value,
+            quoted: token.quoted ?? false,
+          });
           break;
 
-        case 'pipe':
+        case "pipe":
           pushCommand();
-          lastOperator = '';
+          lastOperator = "";
           break;
 
-        case 'and':
+        case "and":
           pushCommand();
-          lastOperator = '&&';
+          lastOperator = "&&";
           negationCount = 0; // Reset for next pipeline segment
           break;
 
-        case 'or':
+        case "or":
           pushCommand();
-          lastOperator = '||';
+          lastOperator = "||";
           negationCount = 0; // Reset for next pipeline segment
           break;
 
-        case 'semicolon':
+        case "semicolon":
           pushCommand();
-          lastOperator = ';';
+          lastOperator = ";";
           negationCount = 0; // Reset for next pipeline segment
           break;
 
-        case 'not':
+        case "not":
           // Increment negation count - odd count means negate
           negationCount++;
           break;
 
-        case 'redirect-stdout':
-        case 'redirect-stdout-append':
+        case "redirect-stdout":
+        case "redirect-stdout-append":
           // Next token should be the target
-          if (i + 1 < tokens.length && tokens[i + 1].type === 'word') {
+          if (i + 1 < tokens.length && tokens[i + 1].type === "word") {
             currentRedirections.push({
-              type: 'stdout',
+              type: "stdout",
               target: tokens[i + 1].value,
-              append: token.type === 'redirect-stdout-append',
+              append: token.type === "redirect-stdout-append",
             });
             i++;
           }
           break;
 
-        case 'redirect-stderr':
-        case 'redirect-stderr-append':
+        case "redirect-stderr":
+        case "redirect-stderr-append":
           // Next token should be the target
-          if (i + 1 < tokens.length && tokens[i + 1].type === 'word') {
+          if (i + 1 < tokens.length && tokens[i + 1].type === "word") {
             currentRedirections.push({
-              type: 'stderr',
+              type: "stderr",
               target: tokens[i + 1].value,
-              append: token.type === 'redirect-stderr-append',
+              append: token.type === "redirect-stderr-append",
             });
             i++;
           }
           break;
 
-        case 'redirect-stderr-to-stdout':
+        case "redirect-stderr-to-stdout":
           currentRedirections.push({
-            type: 'stderr-to-stdout',
+            type: "stderr-to-stdout",
             target: null,
             append: false,
           });
           break;
 
-        case 'redirect-stdin':
+        case "redirect-stdin":
           // Next token should be the source
-          if (i + 1 < tokens.length && tokens[i + 1].type === 'word') {
+          if (i + 1 < tokens.length && tokens[i + 1].type === "word") {
             currentRedirections.push({
-              type: 'stdin',
+              type: "stdin",
               target: tokens[i + 1].value,
               append: false,
             });
@@ -561,6 +602,6 @@ export class ShellParser {
    * Check if a string contains glob characters
    */
   isGlobPattern(str: string): boolean {
-    return str.includes('*') || str.includes('?') || /\[.*\]/.test(str);
+    return str.includes("*") || str.includes("?") || /\[.*\]/.test(str);
   }
 }

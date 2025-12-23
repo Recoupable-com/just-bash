@@ -1,7 +1,12 @@
-import { describe, it, beforeEach, afterEach } from 'vitest';
-import { createTestDir, cleanupTestDir, setupFiles, compareOutputs } from './test-helpers.js';
+import { afterEach, beforeEach, describe, it } from "vitest";
+import {
+  cleanupTestDir,
+  compareOutputs,
+  createTestDir,
+  setupFiles,
+} from "./test-helpers.js";
 
-describe('cat command - Real Bash Comparison', () => {
+describe("cat command - Real Bash Comparison", () => {
   let testDir: string;
 
   beforeEach(async () => {
@@ -12,65 +17,65 @@ describe('cat command - Real Bash Comparison', () => {
     await cleanupTestDir(testDir);
   });
 
-  it('should match single file', async () => {
+  it("should match single file", async () => {
     const env = await setupFiles(testDir, {
-      'test.txt': 'line 1\nline 2\nline 3\n',
+      "test.txt": "line 1\nline 2\nline 3\n",
     });
-    await compareOutputs(env, testDir, 'cat test.txt');
+    await compareOutputs(env, testDir, "cat test.txt");
   });
 
-  it('should match multiple files', async () => {
+  it("should match multiple files", async () => {
     const env = await setupFiles(testDir, {
-      'file1.txt': 'content 1\n',
-      'file2.txt': 'content 2\n',
+      "file1.txt": "content 1\n",
+      "file2.txt": "content 2\n",
     });
-    await compareOutputs(env, testDir, 'cat file1.txt file2.txt');
+    await compareOutputs(env, testDir, "cat file1.txt file2.txt");
   });
 
-  it('should match -n (line numbers)', async () => {
+  it("should match -n (line numbers)", async () => {
     const env = await setupFiles(testDir, {
-      'test.txt': 'line 1\nline 2\nline 3\n',
+      "test.txt": "line 1\nline 2\nline 3\n",
     });
-    await compareOutputs(env, testDir, 'cat -n test.txt');
+    await compareOutputs(env, testDir, "cat -n test.txt");
   });
 
-  it('should match file without trailing newline', async () => {
+  it("should match file without trailing newline", async () => {
     const env = await setupFiles(testDir, {
-      'test.txt': 'no trailing newline',
+      "test.txt": "no trailing newline",
     });
-    await compareOutputs(env, testDir, 'cat test.txt');
+    await compareOutputs(env, testDir, "cat test.txt");
   });
 
-  it('should match empty file', async () => {
+  it("should match empty file", async () => {
     const env = await setupFiles(testDir, {
-      'empty.txt': '',
+      "empty.txt": "",
     });
-    await compareOutputs(env, testDir, 'cat empty.txt');
+    await compareOutputs(env, testDir, "cat empty.txt");
   });
 
-  it('should match file with only newlines', async () => {
+  it("should match file with only newlines", async () => {
     const env = await setupFiles(testDir, {
-      'newlines.txt': '\n\n\n',
+      "newlines.txt": "\n\n\n",
     });
-    await compareOutputs(env, testDir, 'cat newlines.txt');
+    await compareOutputs(env, testDir, "cat newlines.txt");
   });
 
-  it('should match -n with multiple files', async () => {
+  it("should match -n with multiple files", async () => {
     const env = await setupFiles(testDir, {
-      'a.txt': 'file a line 1\nfile a line 2\n',
-      'b.txt': 'file b line 1\n',
+      "a.txt": "file a line 1\nfile a line 2\n",
+      "b.txt": "file b line 1\n",
     });
-    await compareOutputs(env, testDir, 'cat -n a.txt b.txt');
+    await compareOutputs(env, testDir, "cat -n a.txt b.txt");
   });
 
-  it('should match cat with stdin from echo', async () => {
+  it("should match cat with stdin from echo", async () => {
     const env = await setupFiles(testDir, {});
     await compareOutputs(env, testDir, 'echo "hello" | cat');
   });
 
-  it('should match cat with stdin and file', async () => {
+  it("should match cat with stdin and file", async () => {
     const env = await setupFiles(testDir, {
-      'test.txt': 'from file\n',
+      "test.txt": "from file\n",
     });
     await compareOutputs(env, testDir, 'echo "from stdin" | cat - test.txt');
   });

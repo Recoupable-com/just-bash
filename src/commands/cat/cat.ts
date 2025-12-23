@@ -1,18 +1,18 @@
-import { Command, CommandContext, ExecResult } from '../../types.js';
-import { hasHelpFlag, showHelp, unknownOption } from '../help.js';
+import type { Command, CommandContext, ExecResult } from "../../types.js";
+import { hasHelpFlag, showHelp, unknownOption } from "../help.js";
 
 const catHelp = {
-  name: 'cat',
-  summary: 'concatenate files and print on the standard output',
-  usage: 'cat [OPTION]... [FILE]...',
+  name: "cat",
+  summary: "concatenate files and print on the standard output",
+  usage: "cat [OPTION]... [FILE]...",
   options: [
-    '-n, --number           number all output lines',
-    '    --help             display this help and exit',
+    "-n, --number           number all output lines",
+    "    --help             display this help and exit",
   ],
 };
 
 export const catCommand: Command = {
-  name: 'cat',
+  name: "cat",
 
   async execute(args: string[], ctx: CommandContext): Promise<ExecResult> {
     if (hasHelpFlag(args)) {
@@ -24,18 +24,18 @@ export const catCommand: Command = {
 
     // Parse arguments
     for (const arg of args) {
-      if (arg === '-n' || arg === '--number') {
+      if (arg === "-n" || arg === "--number") {
         showLineNumbers = true;
-      } else if (arg === '-') {
+      } else if (arg === "-") {
         // '-' means read from stdin
-        files.push('-');
-      } else if (arg.startsWith('--')) {
-        return unknownOption('cat', arg);
-      } else if (arg.startsWith('-')) {
+        files.push("-");
+      } else if (arg.startsWith("--")) {
+        return unknownOption("cat", arg);
+      } else if (arg.startsWith("-")) {
         // Check each character in combined flags
         for (const c of arg.slice(1)) {
-          if (c !== 'n') {
-            return unknownOption('cat', `-${c}`);
+          if (c !== "n") {
+            return unknownOption("cat", `-${c}`);
           }
         }
         showLineNumbers = true;
@@ -50,17 +50,17 @@ export const catCommand: Command = {
       if (showLineNumbers && output) {
         output = addLineNumbers(output);
       }
-      return { stdout: output, stderr: '', exitCode: 0 };
+      return { stdout: output, stderr: "", exitCode: 0 };
     }
 
-    let stdout = '';
-    let stderr = '';
+    let stdout = "";
+    let stderr = "";
     let exitCode = 0;
 
     for (const file of files) {
       try {
         let content: string;
-        if (file === '-') {
+        if (file === "-") {
           content = ctx.stdin;
         } else {
           const filePath = ctx.fs.resolvePath(ctx.cwd, file);
@@ -73,7 +73,7 @@ export const catCommand: Command = {
         }
 
         stdout += content;
-      } catch (error) {
+      } catch (_error) {
         stderr += `cat: ${file}: No such file or directory\n`;
         exitCode = 1;
       }
@@ -84,15 +84,15 @@ export const catCommand: Command = {
 };
 
 function addLineNumbers(content: string): string {
-  const lines = content.split('\n');
+  const lines = content.split("\n");
   // Don't number the trailing empty line if file ends with newline
-  const hasTrailingNewline = content.endsWith('\n');
+  const hasTrailingNewline = content.endsWith("\n");
   const linesToNumber = hasTrailingNewline ? lines.slice(0, -1) : lines;
 
   const numbered = linesToNumber.map((line, i) => {
-    const num = String(i + 1).padStart(6, ' ');
+    const num = String(i + 1).padStart(6, " ");
     return `${num}\t${line}`;
   });
 
-  return numbered.join('\n') + (hasTrailingNewline ? '\n' : '');
+  return numbered.join("\n") + (hasTrailingNewline ? "\n" : "");
 }

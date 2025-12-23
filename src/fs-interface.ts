@@ -2,21 +2,21 @@
  * File system entry types
  */
 export interface FileEntry {
-  type: 'file';
+  type: "file";
   content: string;
   mode: number;
   mtime: Date;
 }
 
 export interface DirectoryEntry {
-  type: 'directory';
+  type: "directory";
   mode: number;
   mtime: Date;
 }
 
 export interface SymlinkEntry {
-  type: 'symlink';
-  target: string;  // The path this symlink points to
+  type: "symlink";
+  target: string; // The path this symlink points to
   mode: number;
   mtime: Date;
 }
@@ -171,4 +171,6 @@ export interface IFileSystem {
 /**
  * Factory function type for creating filesystem instances
  */
-export type FileSystemFactory = (initialFiles?: Record<string, string>) => IFileSystem;
+export type FileSystemFactory = (
+  initialFiles?: Record<string, string>,
+) => IFileSystem;

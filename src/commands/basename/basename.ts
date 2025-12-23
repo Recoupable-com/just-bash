@@ -1,48 +1,48 @@
-import { Command, CommandContext, ExecResult } from '../../types.js';
-import { hasHelpFlag, showHelp } from '../help.js';
+import type { Command, CommandContext, ExecResult } from "../../types.js";
+import { hasHelpFlag, showHelp } from "../help.js";
 
 const basenameHelp = {
-  name: 'basename',
-  summary: 'strip directory and suffix from filenames',
-  usage: 'basename NAME [SUFFIX]\nbasename OPTION... NAME...',
+  name: "basename",
+  summary: "strip directory and suffix from filenames",
+  usage: "basename NAME [SUFFIX]\nbasename OPTION... NAME...",
   options: [
-    '-a, --multiple   support multiple arguments',
-    '-s, --suffix=SUFFIX  remove a trailing SUFFIX',
-    '    --help       display this help and exit',
+    "-a, --multiple   support multiple arguments",
+    "-s, --suffix=SUFFIX  remove a trailing SUFFIX",
+    "    --help       display this help and exit",
   ],
 };
 
 export const basenameCommand: Command = {
-  name: 'basename',
+  name: "basename",
 
-  async execute(args: string[], ctx: CommandContext): Promise<ExecResult> {
+  async execute(args: string[], _ctx: CommandContext): Promise<ExecResult> {
     if (hasHelpFlag(args)) {
       return showHelp(basenameHelp);
     }
 
     let multiple = false;
-    let suffix = '';
+    let suffix = "";
     const names: string[] = [];
 
     for (let i = 0; i < args.length; i++) {
       const arg = args[i];
-      if (arg === '-a' || arg === '--multiple') {
+      if (arg === "-a" || arg === "--multiple") {
         multiple = true;
-      } else if (arg === '-s' && i + 1 < args.length) {
+      } else if (arg === "-s" && i + 1 < args.length) {
         suffix = args[++i];
         multiple = true;
-      } else if (arg.startsWith('--suffix=')) {
+      } else if (arg.startsWith("--suffix=")) {
         suffix = arg.slice(9);
         multiple = true;
-      } else if (!arg.startsWith('-')) {
+      } else if (!arg.startsWith("-")) {
         names.push(arg);
       }
     }
 
     if (names.length === 0) {
       return {
-        stdout: '',
-        stderr: 'basename: missing operand\n',
+        stdout: "",
+        stderr: "basename: missing operand\n",
         exitCode: 1,
       };
     }
@@ -55,8 +55,8 @@ export const basenameCommand: Command = {
     const results: string[] = [];
     for (const name of names) {
       // Remove trailing slashes
-      let cleanName = name.replace(/\/+$/, '');
-      let base = cleanName.split('/').pop() || cleanName;
+      const cleanName = name.replace(/\/+$/, "");
+      let base = cleanName.split("/").pop() || cleanName;
       if (suffix && base.endsWith(suffix)) {
         base = base.slice(0, -suffix.length);
       }
@@ -64,8 +64,8 @@ export const basenameCommand: Command = {
     }
 
     return {
-      stdout: results.join('\n') + '\n',
-      stderr: '',
+      stdout: `${results.join("\n")}\n`,
+      stderr: "",
       exitCode: 0,
     };
   },

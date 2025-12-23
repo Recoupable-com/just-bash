@@ -1,149 +1,151 @@
-import { describe, it, expect } from 'vitest';
-import { BashEnv } from '../../BashEnv.js';
+import { describe, expect, it } from "vitest";
+import { BashEnv } from "../../BashEnv.js";
 
-describe('rm', () => {
-  it('should remove file', async () => {
+describe("rm", () => {
+  it("should remove file", async () => {
     const env = new BashEnv({
-      files: { '/test.txt': 'content' },
+      files: { "/test.txt": "content" },
     });
-    const result = await env.exec('rm /test.txt');
-    expect(result.stdout).toBe('');
-    expect(result.stderr).toBe('');
+    const result = await env.exec("rm /test.txt");
+    expect(result.stdout).toBe("");
+    expect(result.stderr).toBe("");
     expect(result.exitCode).toBe(0);
-    const cat = await env.exec('cat /test.txt');
+    const cat = await env.exec("cat /test.txt");
     expect(cat.exitCode).toBe(1);
   });
 
-  it('should remove multiple files', async () => {
+  it("should remove multiple files", async () => {
     const env = new BashEnv({
       files: {
-        '/a.txt': '',
-        '/b.txt': '',
-        '/c.txt': '',
+        "/a.txt": "",
+        "/b.txt": "",
+        "/c.txt": "",
       },
     });
-    await env.exec('rm /a.txt /b.txt /c.txt');
-    const ls = await env.exec('ls /');
-    expect(ls.stdout).toBe('');
+    await env.exec("rm /a.txt /b.txt /c.txt");
+    const ls = await env.exec("ls /");
+    expect(ls.stdout).toBe("");
   });
 
-  it('should error on missing file', async () => {
+  it("should error on missing file", async () => {
     const env = new BashEnv();
-    const result = await env.exec('rm /missing.txt');
-    expect(result.stdout).toBe('');
-    expect(result.stderr).toBe("rm: cannot remove '/missing.txt': No such file or directory\n");
+    const result = await env.exec("rm /missing.txt");
+    expect(result.stdout).toBe("");
+    expect(result.stderr).toBe(
+      "rm: cannot remove '/missing.txt': No such file or directory\n",
+    );
     expect(result.exitCode).toBe(1);
   });
 
-  it('should not error with -f on missing file', async () => {
+  it("should not error with -f on missing file", async () => {
     const env = new BashEnv();
-    const result = await env.exec('rm -f /missing.txt');
-    expect(result.stdout).toBe('');
-    expect(result.stderr).toBe('');
+    const result = await env.exec("rm -f /missing.txt");
+    expect(result.stdout).toBe("");
+    expect(result.stderr).toBe("");
     expect(result.exitCode).toBe(0);
   });
 
-  it('should error when removing directory without -r', async () => {
+  it("should error when removing directory without -r", async () => {
     const env = new BashEnv({
-      files: { '/dir/file.txt': 'content' },
+      files: { "/dir/file.txt": "content" },
     });
-    const result = await env.exec('rm /dir');
-    expect(result.stdout).toBe('');
+    const result = await env.exec("rm /dir");
+    expect(result.stdout).toBe("");
     expect(result.exitCode).toBe(1);
   });
 
-  it('should remove directory with -r', async () => {
+  it("should remove directory with -r", async () => {
     const env = new BashEnv({
-      files: { '/dir/file.txt': 'content' },
+      files: { "/dir/file.txt": "content" },
     });
-    const result = await env.exec('rm -r /dir');
-    expect(result.stdout).toBe('');
-    expect(result.stderr).toBe('');
+    const result = await env.exec("rm -r /dir");
+    expect(result.stdout).toBe("");
+    expect(result.stderr).toBe("");
     expect(result.exitCode).toBe(0);
-    const ls = await env.exec('ls /dir');
+    const ls = await env.exec("ls /dir");
     expect(ls.exitCode).toBe(2);
   });
 
-  it('should remove directory with -R', async () => {
+  it("should remove directory with -R", async () => {
     const env = new BashEnv({
-      files: { '/dir/file.txt': 'content' },
+      files: { "/dir/file.txt": "content" },
     });
-    await env.exec('rm -R /dir');
-    const ls = await env.exec('ls /dir');
+    await env.exec("rm -R /dir");
+    const ls = await env.exec("ls /dir");
     expect(ls.exitCode).toBe(2);
   });
 
-  it('should remove nested directories with -r', async () => {
+  it("should remove nested directories with -r", async () => {
     const env = new BashEnv({
       files: {
-        '/dir/sub1/file1.txt': '',
-        '/dir/sub2/file2.txt': '',
-        '/dir/root.txt': '',
+        "/dir/sub1/file1.txt": "",
+        "/dir/sub2/file2.txt": "",
+        "/dir/root.txt": "",
       },
     });
-    await env.exec('rm -r /dir');
-    const ls = await env.exec('ls /dir');
+    await env.exec("rm -r /dir");
+    const ls = await env.exec("ls /dir");
     expect(ls.exitCode).toBe(2);
   });
 
-  it('should combine -rf flags', async () => {
+  it("should combine -rf flags", async () => {
     const env = new BashEnv({
-      files: { '/dir/file.txt': '' },
+      files: { "/dir/file.txt": "" },
     });
-    const result = await env.exec('rm -rf /dir /nonexistent');
-    expect(result.stdout).toBe('');
-    expect(result.stderr).toBe('');
+    const result = await env.exec("rm -rf /dir /nonexistent");
+    expect(result.stdout).toBe("");
+    expect(result.stderr).toBe("");
     expect(result.exitCode).toBe(0);
   });
 
-  it('should handle --recursive flag', async () => {
+  it("should handle --recursive flag", async () => {
     const env = new BashEnv({
-      files: { '/dir/file.txt': '' },
+      files: { "/dir/file.txt": "" },
     });
-    await env.exec('rm --recursive /dir');
-    const ls = await env.exec('ls /dir');
+    await env.exec("rm --recursive /dir");
+    const ls = await env.exec("ls /dir");
     expect(ls.exitCode).toBe(2);
   });
 
-  it('should handle --force flag', async () => {
+  it("should handle --force flag", async () => {
     const env = new BashEnv();
-    const result = await env.exec('rm --force /missing');
-    expect(result.stdout).toBe('');
-    expect(result.stderr).toBe('');
+    const result = await env.exec("rm --force /missing");
+    expect(result.stdout).toBe("");
+    expect(result.stderr).toBe("");
     expect(result.exitCode).toBe(0);
   });
 
-  it('should not error with -f and no arguments', async () => {
+  it("should not error with -f and no arguments", async () => {
     const env = new BashEnv();
-    const result = await env.exec('rm -f');
-    expect(result.stdout).toBe('');
-    expect(result.stderr).toBe('');
+    const result = await env.exec("rm -f");
+    expect(result.stdout).toBe("");
+    expect(result.stderr).toBe("");
     expect(result.exitCode).toBe(0);
   });
 
-  it('should error with no arguments', async () => {
+  it("should error with no arguments", async () => {
     const env = new BashEnv();
-    const result = await env.exec('rm');
-    expect(result.stdout).toBe('');
-    expect(result.stderr).toBe('rm: missing operand\n');
+    const result = await env.exec("rm");
+    expect(result.stdout).toBe("");
+    expect(result.stderr).toBe("rm: missing operand\n");
     expect(result.exitCode).toBe(1);
   });
 
-  it('should remove empty directory with -r', async () => {
+  it("should remove empty directory with -r", async () => {
     const env = new BashEnv();
-    await env.exec('mkdir /emptydir');
-    await env.exec('rm -r /emptydir');
-    const ls = await env.exec('ls /emptydir');
+    await env.exec("mkdir /emptydir");
+    await env.exec("rm -r /emptydir");
+    const ls = await env.exec("ls /emptydir");
     expect(ls.exitCode).toBe(2);
   });
 
-  it('should remove file with relative path', async () => {
+  it("should remove file with relative path", async () => {
     const env = new BashEnv({
-      files: { '/home/user/file.txt': 'content' },
-      cwd: '/home/user',
+      files: { "/home/user/file.txt": "content" },
+      cwd: "/home/user",
     });
-    await env.exec('rm file.txt');
-    const cat = await env.exec('cat /home/user/file.txt');
+    await env.exec("rm file.txt");
+    const cat = await env.exec("cat /home/user/file.txt");
     expect(cat.exitCode).toBe(1);
   });
 });

@@ -1,4 +1,4 @@
-import { IFileSystem } from './fs-interface.js';
+import type { IFileSystem } from "./fs-interface.js";
 
 export interface ExecResult {
   stdout: string;

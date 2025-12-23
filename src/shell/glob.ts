@@ -8,19 +8,19 @@
  * - [...] (character classes)
  */
 
-import { IFileSystem } from '../fs.js';
+import type { IFileSystem } from "../fs.js";
 
 export class GlobExpander {
   constructor(
     private fs: IFileSystem,
-    private cwd: string
+    private cwd: string,
   ) {}
 
   /**
    * Check if a string contains glob characters
    */
   isGlobPattern(str: string): boolean {
-    return str.includes('*') || str.includes('?') || /\[.*\]/.test(str);
+    return str.includes("*") || str.includes("?") || /\[.*\]/.test(str);
   }
 
   /**
@@ -57,7 +57,7 @@ export class GlobExpander {
    */
   async expand(pattern: string): Promise<string[]> {
     // Handle ** (recursive) patterns
-    if (pattern.includes('**')) {
+    if (pattern.includes("**")) {
       return this.expandRecursive(pattern);
     }
 
@@ -71,7 +71,7 @@ export class GlobExpander {
     const results: string[] = [];
 
     // Find the directory part and the glob part
-    const lastSlash = pattern.lastIndexOf('/');
+    const lastSlash = pattern.lastIndexOf("/");
     let dirPath: string;
     let globPart: string;
 
@@ -79,7 +79,7 @@ export class GlobExpander {
       dirPath = this.cwd;
       globPart = pattern;
     } else {
-      dirPath = pattern.slice(0, lastSlash) || '/';
+      dirPath = pattern.slice(0, lastSlash) || "/";
       globPart = pattern.slice(lastSlash + 1);
     }
 
@@ -109,12 +109,13 @@ export class GlobExpander {
     const results: string[] = [];
 
     // Split pattern at **
-    const doubleStarIndex = pattern.indexOf('**');
-    const beforeDoubleStar = pattern.slice(0, doubleStarIndex).replace(/\/$/, '') || '.';
+    const doubleStarIndex = pattern.indexOf("**");
+    const beforeDoubleStar =
+      pattern.slice(0, doubleStarIndex).replace(/\/$/, "") || ".";
     const afterDoubleStar = pattern.slice(doubleStarIndex + 2);
 
     // Get the file pattern after **
-    const filePattern = afterDoubleStar.replace(/^\//, '');
+    const filePattern = afterDoubleStar.replace(/^\//, "");
 
     await this.walkDirectory(beforeDoubleStar, filePattern, results);
 
@@ -124,14 +125,18 @@ export class GlobExpander {
   /**
    * Recursively walk a directory and collect matching files
    */
-  private async walkDirectory(dir: string, filePattern: string, results: string[]): Promise<void> {
+  private async walkDirectory(
+    dir: string,
+    filePattern: string,
+    results: string[],
+  ): Promise<void> {
     const fullPath = this.fs.resolvePath(this.cwd, dir);
 
     try {
       const entries = await this.fs.readdir(fullPath);
 
       for (const entry of entries) {
-        const entryPath = dir === '.' ? entry : `${dir}/${entry}`;
+        const entryPath = dir === "." ? entry : `${dir}/${entry}`;
         const fullEntryPath = this.fs.resolvePath(this.cwd, entryPath);
 
         try {
@@ -167,32 +172,32 @@ export class GlobExpander {
    * Convert a glob pattern to a RegExp
    */
   private patternToRegex(pattern: string): RegExp {
-    let regex = '^';
+    let regex = "^";
 
     for (let i = 0; i < pattern.length; i++) {
       const c = pattern[i];
 
-      if (c === '*') {
-        regex += '.*';
-      } else if (c === '?') {
-        regex += '.';
-      } else if (c === '[') {
+      if (c === "*") {
+        regex += ".*";
+      } else if (c === "?") {
+        regex += ".";
+      } else if (c === "[") {
         // Character class - find the closing bracket
         let j = i + 1;
-        while (j < pattern.length && pattern[j] !== ']') {
+        while (j < pattern.length && pattern[j] !== "]") {
           j++;
         }
         regex += pattern.slice(i, j + 1);
         i = j;
       } else if (/[.+^${}()|\\]/.test(c)) {
         // Escape regex special characters
-        regex += '\\' + c;
+        regex += `\\${c}`;
       } else {
         regex += c;
       }
     }
 
-    regex += '$';
+    regex += "$";
     return new RegExp(regex);
   }
 }

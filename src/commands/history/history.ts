@@ -1,21 +1,21 @@
-import { Command, CommandContext, ExecResult } from '../../types.js';
-import { hasHelpFlag, showHelp } from '../help.js';
+import type { Command, CommandContext, ExecResult } from "../../types.js";
+import { hasHelpFlag, showHelp } from "../help.js";
 
 const historyHelp = {
-  name: 'history',
-  summary: 'display command history',
-  usage: 'history [n]',
+  name: "history",
+  summary: "display command history",
+  usage: "history [n]",
   options: [
-    '-c      clear the history list',
-    '    --help display this help and exit',
+    "-c      clear the history list",
+    "    --help display this help and exit",
   ],
 };
 
 // History is stored in the environment as JSON
-const HISTORY_KEY = 'BASH_HISTORY';
+const HISTORY_KEY = "BASH_HISTORY";
 
 export const historyCommand: Command = {
-  name: 'history',
+  name: "history",
 
   async execute(args: string[], ctx: CommandContext): Promise<ExecResult> {
     if (hasHelpFlag(args)) {
@@ -23,7 +23,7 @@ export const historyCommand: Command = {
     }
 
     // Get history from environment
-    const historyStr = ctx.env[HISTORY_KEY] || '[]';
+    const historyStr = ctx.env[HISTORY_KEY] || "[]";
     let history: string[];
     try {
       history = JSON.parse(historyStr);
@@ -32,9 +32,9 @@ export const historyCommand: Command = {
     }
 
     // Handle -c (clear)
-    if (args[0] === '-c') {
-      ctx.env[HISTORY_KEY] = '[]';
-      return { stdout: '', stderr: '', exitCode: 0 };
+    if (args[0] === "-c") {
+      ctx.env[HISTORY_KEY] = "[]";
+      return { stdout: "", stderr: "", exitCode: 0 };
     }
 
     // Get optional count
@@ -45,19 +45,22 @@ export const historyCommand: Command = {
 
     // Display history
     const start = history.length - count;
-    let stdout = '';
+    let stdout = "";
     for (let i = start; i < history.length; i++) {
-      const lineNum = (i + 1).toString().padStart(5, ' ');
+      const lineNum = (i + 1).toString().padStart(5, " ");
       stdout += `${lineNum}  ${history[i]}\n`;
     }
 
-    return { stdout, stderr: '', exitCode: 0 };
+    return { stdout, stderr: "", exitCode: 0 };
   },
 };
 
 // Helper to add a command to history (called from BashEnv)
-export function addToHistory(env: Record<string, string>, command: string): void {
-  const historyStr = env[HISTORY_KEY] || '[]';
+export function addToHistory(
+  env: Record<string, string>,
+  command: string,
+): void {
+  const historyStr = env[HISTORY_KEY] || "[]";
   let history: string[];
   try {
     history = JSON.parse(historyStr);

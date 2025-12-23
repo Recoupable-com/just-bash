@@ -1,18 +1,18 @@
-import { Command, CommandContext, ExecResult } from '../../types.js';
-import { hasHelpFlag, showHelp } from '../help.js';
+import type { Command, CommandContext, ExecResult } from "../../types.js";
+import { hasHelpFlag, showHelp } from "../help.js";
 
 const chmodHelp = {
-  name: 'chmod',
-  summary: 'change file mode bits',
-  usage: 'chmod [OPTIONS] MODE FILE...',
+  name: "chmod",
+  summary: "change file mode bits",
+  usage: "chmod [OPTIONS] MODE FILE...",
   options: [
-    '-R      change files recursively',
-    '    --help display this help and exit',
+    "-R      change files recursively",
+    "    --help display this help and exit",
   ],
 };
 
 export const chmodCommand: Command = {
-  name: 'chmod',
+  name: "chmod",
 
   async execute(args: string[], ctx: CommandContext): Promise<ExecResult> {
     if (hasHelpFlag(args)) {
@@ -20,19 +20,19 @@ export const chmodCommand: Command = {
     }
 
     if (args.length < 2) {
-      return { stdout: '', stderr: 'chmod: missing operand\n', exitCode: 1 };
+      return { stdout: "", stderr: "chmod: missing operand\n", exitCode: 1 };
     }
 
     let recursive = false;
     let argIdx = 0;
 
     // Parse options
-    while (argIdx < args.length && args[argIdx].startsWith('-')) {
+    while (argIdx < args.length && args[argIdx].startsWith("-")) {
       const arg = args[argIdx];
-      if (arg === '-R' || arg === '--recursive') {
+      if (arg === "-R" || arg === "--recursive") {
         recursive = true;
         argIdx++;
-      } else if (arg === '--') {
+      } else if (arg === "--") {
         argIdx++;
         break;
       } else {
@@ -40,12 +40,16 @@ export const chmodCommand: Command = {
         if (/^[+-]?[rwxugo]+/.test(arg) || /^\d+$/.test(arg)) {
           break;
         }
-        return { stdout: '', stderr: `chmod: invalid option -- '${arg.slice(1)}'\n`, exitCode: 1 };
+        return {
+          stdout: "",
+          stderr: `chmod: invalid option -- '${arg.slice(1)}'\n`,
+          exitCode: 1,
+        };
       }
     }
 
     if (args.length - argIdx < 2) {
-      return { stdout: '', stderr: 'chmod: missing operand\n', exitCode: 1 };
+      return { stdout: "", stderr: "chmod: missing operand\n", exitCode: 1 };
     }
 
     const modeArg = args[argIdx];
@@ -55,11 +59,15 @@ export const chmodCommand: Command = {
     let modeValue: number;
     try {
       modeValue = parseMode(modeArg);
-    } catch (e) {
-      return { stdout: '', stderr: `chmod: invalid mode: '${modeArg}'\n`, exitCode: 1 };
+    } catch (_e) {
+      return {
+        stdout: "",
+        stderr: `chmod: invalid mode: '${modeArg}'\n`,
+        exitCode: 1,
+      };
     }
 
-    let stderr = '';
+    let stderr = "";
     let anyError = false;
 
     for (const file of files) {
@@ -80,14 +88,18 @@ export const chmodCommand: Command = {
       }
     }
 
-    return { stdout: '', stderr, exitCode: anyError ? 1 : 0 };
+    return { stdout: "", stderr, exitCode: anyError ? 1 : 0 };
   },
 };
 
-async function chmodRecursive(ctx: CommandContext, dir: string, mode: number): Promise<void> {
+async function chmodRecursive(
+  ctx: CommandContext,
+  dir: string,
+  mode: number,
+): Promise<void> {
   const entries = await ctx.fs.readdir(dir);
   for (const entry of entries) {
-    const fullPath = dir === '/' ? `/${entry}` : `${dir}/${entry}`;
+    const fullPath = dir === "/" ? `/${entry}` : `${dir}/${entry}`;
     await ctx.fs.chmod(fullPath, mode);
 
     const stat = await ctx.fs.stat(fullPath);
@@ -108,40 +120,40 @@ function parseMode(modeStr: string): number {
   let mode = 0o644;
 
   // Parse symbolic modes like u+x, g-w, o=r, a+x, +x
-  const parts = modeStr.split(',');
+  const parts = modeStr.split(",");
   for (const part of parts) {
     const match = part.match(/^([ugoa]*)([+\-=])([rwxXst]*)$/);
     if (!match) {
       throw new Error(`Invalid mode: ${modeStr}`);
     }
 
-    let who = match[1] || 'a';
+    let who = match[1] || "a";
     const op = match[2];
     const perms = match[3];
 
     // Convert 'a' to 'ugo'
-    if (who === 'a' || who === '') {
-      who = 'ugo';
+    if (who === "a" || who === "") {
+      who = "ugo";
     }
 
     let permBits = 0;
-    if (perms.includes('r')) permBits |= 0o4;
-    if (perms.includes('w')) permBits |= 0o2;
-    if (perms.includes('x') || perms.includes('X')) permBits |= 0o1;
+    if (perms.includes("r")) permBits |= 0o4;
+    if (perms.includes("w")) permBits |= 0o2;
+    if (perms.includes("x") || perms.includes("X")) permBits |= 0o1;
 
     for (const w of who) {
       let shift = 0;
-      if (w === 'u') shift = 6;
-      else if (w === 'g') shift = 3;
-      else if (w === 'o') shift = 0;
+      if (w === "u") shift = 6;
+      else if (w === "g") shift = 3;
+      else if (w === "o") shift = 0;
 
       const bits = permBits << shift;
 
-      if (op === '+') {
+      if (op === "+") {
         mode |= bits;
-      } else if (op === '-') {
+      } else if (op === "-") {
         mode &= ~bits;
-      } else if (op === '=') {
+      } else if (op === "=") {
         // Clear the bits for this who, then set
         mode &= ~(0o7 << shift);
         mode |= bits;

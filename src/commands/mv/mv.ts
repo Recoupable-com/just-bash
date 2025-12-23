@@ -1,18 +1,18 @@
-import { Command, CommandContext, ExecResult } from '../../types.js';
-import { unknownOption } from '../help.js';
+import type { Command, CommandContext, ExecResult } from "../../types.js";
+import { unknownOption } from "../help.js";
 
 export const mvCommand: Command = {
-  name: 'mv',
+  name: "mv",
 
   async execute(args: string[], ctx: CommandContext): Promise<ExecResult> {
     const paths: string[] = [];
 
     // Parse arguments
     for (const arg of args) {
-      if (arg.startsWith('--')) {
-        return unknownOption('mv', arg);
-      } else if (arg.startsWith('-') && arg.length > 1) {
-        return unknownOption('mv', arg);
+      if (arg.startsWith("--")) {
+        return unknownOption("mv", arg);
+      } else if (arg.startsWith("-") && arg.length > 1) {
+        return unknownOption("mv", arg);
       } else {
         paths.push(arg);
       }
@@ -20,8 +20,8 @@ export const mvCommand: Command = {
 
     if (paths.length < 2) {
       return {
-        stdout: '',
-        stderr: 'mv: missing destination file operand\n',
+        stdout: "",
+        stderr: "mv: missing destination file operand\n",
         exitCode: 1,
       };
     }
@@ -30,7 +30,7 @@ export const mvCommand: Command = {
     const sources = paths;
     const destPath = ctx.fs.resolvePath(ctx.cwd, dest);
 
-    let stderr = '';
+    let stderr = "";
     let exitCode = 0;
 
     // Check if dest is a directory
@@ -45,7 +45,7 @@ export const mvCommand: Command = {
     // If multiple sources, dest must be a directory
     if (sources.length > 1 && !destIsDir) {
       return {
-        stdout: '',
+        stdout: "",
         stderr: `mv: target '${dest}' is not a directory\n`,
         exitCode: 1,
       };
@@ -57,14 +57,15 @@ export const mvCommand: Command = {
 
         let targetPath = destPath;
         if (destIsDir) {
-          const basename = src.split('/').pop() || src;
-          targetPath = destPath === '/' ? '/' + basename : destPath + '/' + basename;
+          const basename = src.split("/").pop() || src;
+          targetPath =
+            destPath === "/" ? `/${basename}` : `${destPath}/${basename}`;
         }
 
         await ctx.fs.mv(srcPath, targetPath);
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
-        if (message.includes('ENOENT') || message.includes('no such file')) {
+        if (message.includes("ENOENT") || message.includes("no such file")) {
           stderr += `mv: cannot stat '${src}': No such file or directory\n`;
         } else {
           stderr += `mv: cannot move '${src}': ${message}\n`;
@@ -73,6 +74,6 @@ export const mvCommand: Command = {
       }
     }
 
-    return { stdout: '', stderr, exitCode };
+    return { stdout: "", stderr, exitCode };
   },
 };

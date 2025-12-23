@@ -1,8 +1,8 @@
-import { Command, CommandContext, ExecResult } from '../../types.js';
-import { unknownOption } from '../help.js';
+import type { Command, CommandContext, ExecResult } from "../../types.js";
+import { unknownOption } from "../help.js";
 
 export const mkdirCommand: Command = {
-  name: 'mkdir',
+  name: "mkdir",
 
   async execute(args: string[], ctx: CommandContext): Promise<ExecResult> {
     let recursive = false;
@@ -10,13 +10,13 @@ export const mkdirCommand: Command = {
 
     // Parse arguments
     for (const arg of args) {
-      if (arg === '-p' || arg === '--parents') {
+      if (arg === "-p" || arg === "--parents") {
         recursive = true;
-      } else if (arg.startsWith('--')) {
-        return unknownOption('mkdir', arg);
-      } else if (arg.startsWith('-')) {
+      } else if (arg.startsWith("--")) {
+        return unknownOption("mkdir", arg);
+      } else if (arg.startsWith("-")) {
         for (const c of arg.slice(1)) {
-          if (c !== 'p') return unknownOption('mkdir', `-${c}`);
+          if (c !== "p") return unknownOption("mkdir", `-${c}`);
         }
         recursive = true;
       } else {
@@ -26,13 +26,13 @@ export const mkdirCommand: Command = {
 
     if (dirs.length === 0) {
       return {
-        stdout: '',
-        stderr: 'mkdir: missing operand\n',
+        stdout: "",
+        stderr: "mkdir: missing operand\n",
         exitCode: 1,
       };
     }
 
-    let stderr = '';
+    let stderr = "";
     let exitCode = 0;
 
     for (const dir of dirs) {
@@ -41,9 +41,12 @@ export const mkdirCommand: Command = {
         await ctx.fs.mkdir(fullPath, { recursive });
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
-        if (message.includes('ENOENT') || message.includes('no such file')) {
+        if (message.includes("ENOENT") || message.includes("no such file")) {
           stderr += `mkdir: cannot create directory '${dir}': No such file or directory\n`;
-        } else if (message.includes('EEXIST') || message.includes('already exists')) {
+        } else if (
+          message.includes("EEXIST") ||
+          message.includes("already exists")
+        ) {
           stderr += `mkdir: cannot create directory '${dir}': File exists\n`;
         } else {
           stderr += `mkdir: cannot create directory '${dir}': ${message}\n`;
@@ -52,6 +55,6 @@ export const mkdirCommand: Command = {
       }
     }
 
-    return { stdout: '', stderr, exitCode };
+    return { stdout: "", stderr, exitCode };
   },
 };

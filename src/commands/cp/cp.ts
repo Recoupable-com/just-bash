@@ -1,8 +1,8 @@
-import { Command, CommandContext, ExecResult } from '../../types.js';
-import { unknownOption } from '../help.js';
+import type { Command, CommandContext, ExecResult } from "../../types.js";
+import { unknownOption } from "../help.js";
 
 export const cpCommand: Command = {
-  name: 'cp',
+  name: "cp",
 
   async execute(args: string[], ctx: CommandContext): Promise<ExecResult> {
     let recursive = false;
@@ -10,13 +10,13 @@ export const cpCommand: Command = {
 
     // Parse arguments
     for (const arg of args) {
-      if (arg === '-r' || arg === '-R' || arg === '--recursive') {
+      if (arg === "-r" || arg === "-R" || arg === "--recursive") {
         recursive = true;
-      } else if (arg.startsWith('--')) {
-        return unknownOption('cp', arg);
-      } else if (arg.startsWith('-')) {
+      } else if (arg.startsWith("--")) {
+        return unknownOption("cp", arg);
+      } else if (arg.startsWith("-")) {
         for (const c of arg.slice(1)) {
-          if (c !== 'r' && c !== 'R') return unknownOption('cp', `-${c}`);
+          if (c !== "r" && c !== "R") return unknownOption("cp", `-${c}`);
         }
         recursive = true;
       } else {
@@ -26,8 +26,8 @@ export const cpCommand: Command = {
 
     if (paths.length < 2) {
       return {
-        stdout: '',
-        stderr: 'cp: missing destination file operand\n',
+        stdout: "",
+        stderr: "cp: missing destination file operand\n",
         exitCode: 1,
       };
     }
@@ -36,7 +36,7 @@ export const cpCommand: Command = {
     const sources = paths;
     const destPath = ctx.fs.resolvePath(ctx.cwd, dest);
 
-    let stderr = '';
+    let stderr = "";
     let exitCode = 0;
 
     // Check if dest is a directory
@@ -51,7 +51,7 @@ export const cpCommand: Command = {
     // If multiple sources, dest must be a directory
     if (sources.length > 1 && !destIsDir) {
       return {
-        stdout: '',
+        stdout: "",
         stderr: `cp: target '${dest}' is not a directory\n`,
         exitCode: 1,
       };
@@ -64,8 +64,9 @@ export const cpCommand: Command = {
 
         let targetPath = destPath;
         if (destIsDir) {
-          const basename = src.split('/').pop() || src;
-          targetPath = destPath === '/' ? '/' + basename : destPath + '/' + basename;
+          const basename = src.split("/").pop() || src;
+          targetPath =
+            destPath === "/" ? `/${basename}` : `${destPath}/${basename}`;
         }
 
         if (srcStat.isDirectory && !recursive) {
@@ -77,7 +78,7 @@ export const cpCommand: Command = {
         await ctx.fs.cp(srcPath, targetPath, { recursive });
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
-        if (message.includes('ENOENT') || message.includes('no such file')) {
+        if (message.includes("ENOENT") || message.includes("no such file")) {
           stderr += `cp: cannot stat '${src}': No such file or directory\n`;
         } else {
           stderr += `cp: cannot copy '${src}': ${message}\n`;
@@ -86,6 +87,6 @@ export const cpCommand: Command = {
       }
     }
 
-    return { stdout: '', stderr, exitCode };
+    return { stdout: "", stderr, exitCode };
   },
 };

@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest";
-import { Sandbox, Command, OutputMessage } from "./Sandbox.js";
+import { describe, expect, it } from "vitest";
+import { Command, type OutputMessage, Sandbox } from "./Sandbox.js";
 
 describe("Sandbox API", () => {
   describe("Sandbox.create()", () => {
@@ -32,7 +32,6 @@ describe("Sandbox API", () => {
       const stderr = await cmd.stderr();
       expect(stderr).toContain("maximum recursion depth");
     });
-
   });
 
   describe("sandbox.runCommand()", () => {
@@ -46,7 +45,7 @@ describe("Sandbox API", () => {
       const sandbox = await Sandbox.create();
       const cmd = await sandbox.runCommand("echo test");
       expect(cmd.cmdId).toMatch(
-        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
       );
     });
 

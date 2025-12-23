@@ -1,109 +1,111 @@
-import { describe, it, expect } from 'vitest';
-import { BashEnv } from '../../BashEnv.js';
+import { describe, expect, it } from "vitest";
+import { BashEnv } from "../../BashEnv.js";
 
-describe('head', () => {
-  it('should show first 10 lines by default', async () => {
-    const lines = Array.from({ length: 20 }, (_, i) => `line${i + 1}`).join('\n') + '\n';
+describe("head", () => {
+  it("should show first 10 lines by default", async () => {
+    const lines = `${Array.from({ length: 20 }, (_, i) => `line${i + 1}`).join("\n")}\n`;
     const env = new BashEnv({
-      files: { '/test.txt': lines },
+      files: { "/test.txt": lines },
     });
-    const result = await env.exec('head /test.txt');
-    expect(result.stdout).toContain('line1');
-    expect(result.stdout).toContain('line10');
-    expect(result.stdout).not.toContain('line11');
+    const result = await env.exec("head /test.txt");
+    expect(result.stdout).toContain("line1");
+    expect(result.stdout).toContain("line10");
+    expect(result.stdout).not.toContain("line11");
     expect(result.exitCode).toBe(0);
   });
 
-  it('should show specified number of lines with -n', async () => {
+  it("should show specified number of lines with -n", async () => {
     const env = new BashEnv({
-      files: { '/test.txt': 'a\nb\nc\nd\ne\n' },
+      files: { "/test.txt": "a\nb\nc\nd\ne\n" },
     });
-    const result = await env.exec('head -n 3 /test.txt');
-    expect(result.stdout).toBe('a\nb\nc\n');
+    const result = await env.exec("head -n 3 /test.txt");
+    expect(result.stdout).toBe("a\nb\nc\n");
   });
 
-  it('should show specified number of lines with -n attached', async () => {
+  it("should show specified number of lines with -n attached", async () => {
     const env = new BashEnv({
-      files: { '/test.txt': 'a\nb\nc\nd\ne\n' },
+      files: { "/test.txt": "a\nb\nc\nd\ne\n" },
     });
-    const result = await env.exec('head -n3 /test.txt');
-    expect(result.stdout).toBe('a\nb\nc\n');
+    const result = await env.exec("head -n3 /test.txt");
+    expect(result.stdout).toBe("a\nb\nc\n");
   });
 
-  it('should show specified number of lines with -NUM', async () => {
+  it("should show specified number of lines with -NUM", async () => {
     const env = new BashEnv({
-      files: { '/test.txt': 'a\nb\nc\nd\ne\n' },
+      files: { "/test.txt": "a\nb\nc\nd\ne\n" },
     });
-    const result = await env.exec('head -2 /test.txt');
-    expect(result.stdout).toBe('a\nb\n');
+    const result = await env.exec("head -2 /test.txt");
+    expect(result.stdout).toBe("a\nb\n");
   });
 
-  it('should handle file with fewer lines than requested', async () => {
+  it("should handle file with fewer lines than requested", async () => {
     const env = new BashEnv({
-      files: { '/test.txt': 'a\nb\n' },
+      files: { "/test.txt": "a\nb\n" },
     });
-    const result = await env.exec('head -n 10 /test.txt');
-    expect(result.stdout).toBe('a\nb\n');
+    const result = await env.exec("head -n 10 /test.txt");
+    expect(result.stdout).toBe("a\nb\n");
   });
 
-  it('should show headers for multiple files', async () => {
+  it("should show headers for multiple files", async () => {
     const env = new BashEnv({
       files: {
-        '/a.txt': 'aaa\n',
-        '/b.txt': 'bbb\n',
+        "/a.txt": "aaa\n",
+        "/b.txt": "bbb\n",
       },
     });
-    const result = await env.exec('head /a.txt /b.txt');
-    expect(result.stdout).toContain('==> /a.txt <==');
-    expect(result.stdout).toContain('==> /b.txt <==');
-    expect(result.stdout).toContain('aaa');
-    expect(result.stdout).toContain('bbb');
+    const result = await env.exec("head /a.txt /b.txt");
+    expect(result.stdout).toContain("==> /a.txt <==");
+    expect(result.stdout).toContain("==> /b.txt <==");
+    expect(result.stdout).toContain("aaa");
+    expect(result.stdout).toContain("bbb");
   });
 
-  it('should error on missing file', async () => {
+  it("should error on missing file", async () => {
     const env = new BashEnv();
-    const result = await env.exec('head /missing.txt');
+    const result = await env.exec("head /missing.txt");
     expect(result.exitCode).toBe(1);
-    expect(result.stderr).toBe('head: /missing.txt: No such file or directory\n');
+    expect(result.stderr).toBe(
+      "head: /missing.txt: No such file or directory\n",
+    );
   });
 
-  it('should read from stdin', async () => {
+  it("should read from stdin", async () => {
     const env = new BashEnv();
     const result = await env.exec('echo -e "a\\nb\\nc\\nd\\ne" | head -n 2');
-    expect(result.stdout).toContain('a');
-    expect(result.stdout).toContain('b');
-    expect(result.stdout).not.toContain('c');
+    expect(result.stdout).toContain("a");
+    expect(result.stdout).toContain("b");
+    expect(result.stdout).not.toContain("c");
   });
 
-  it('should handle empty file', async () => {
+  it("should handle empty file", async () => {
     const env = new BashEnv({
-      files: { '/empty.txt': '' },
+      files: { "/empty.txt": "" },
     });
-    const result = await env.exec('head /empty.txt');
+    const result = await env.exec("head /empty.txt");
     expect(result.exitCode).toBe(0);
   });
 
-  it('should handle head -n 1', async () => {
+  it("should handle head -n 1", async () => {
     const env = new BashEnv({
-      files: { '/test.txt': 'first\nsecond\n' },
+      files: { "/test.txt": "first\nsecond\n" },
     });
-    const result = await env.exec('head -n 1 /test.txt');
-    expect(result.stdout).toBe('first\n');
+    const result = await env.exec("head -n 1 /test.txt");
+    expect(result.stdout).toBe("first\n");
   });
 
-  it('should handle file without trailing newline', async () => {
+  it("should handle file without trailing newline", async () => {
     const env = new BashEnv({
-      files: { '/test.txt': 'no newline' },
+      files: { "/test.txt": "no newline" },
     });
-    const result = await env.exec('head -n 1 /test.txt');
-    expect(result.stdout).toContain('no newline');
+    const result = await env.exec("head -n 1 /test.txt");
+    expect(result.stdout).toContain("no newline");
   });
 
-  it('should show first line only with -n 1', async () => {
+  it("should show first line only with -n 1", async () => {
     const env = new BashEnv({
-      files: { '/test.txt': 'first\nsecond\nthird\n' },
+      files: { "/test.txt": "first\nsecond\nthird\n" },
     });
-    const result = await env.exec('head -n 1 /test.txt');
-    expect(result.stdout).toBe('first\n');
+    const result = await env.exec("head -n 1 /test.txt");
+    expect(result.stdout).toBe("first\n");
   });
 });

@@ -1,18 +1,18 @@
-import { Command, CommandContext, ExecResult } from '../../types.js';
-import { hasHelpFlag, showHelp } from '../help.js';
+import type { Command, CommandContext, ExecResult } from "../../types.js";
+import { hasHelpFlag, showHelp } from "../help.js";
 
 const readlinkHelp = {
-  name: 'readlink',
-  summary: 'print resolved symbolic links or canonical file names',
-  usage: 'readlink [OPTIONS] FILE...',
+  name: "readlink",
+  summary: "print resolved symbolic links or canonical file names",
+  usage: "readlink [OPTIONS] FILE...",
   options: [
-    '-f      canonicalize by following every symlink in every component of the given name recursively',
-    '    --help display this help and exit',
+    "-f      canonicalize by following every symlink in every component of the given name recursively",
+    "    --help display this help and exit",
   ],
 };
 
 export const readlinkCommand: Command = {
-  name: 'readlink',
+  name: "readlink",
 
   async execute(args: string[], ctx: CommandContext): Promise<ExecResult> {
     if (hasHelpFlag(args)) {
@@ -23,26 +23,30 @@ export const readlinkCommand: Command = {
     let argIdx = 0;
 
     // Parse options
-    while (argIdx < args.length && args[argIdx].startsWith('-')) {
+    while (argIdx < args.length && args[argIdx].startsWith("-")) {
       const arg = args[argIdx];
-      if (arg === '-f' || arg === '--canonicalize') {
+      if (arg === "-f" || arg === "--canonicalize") {
         canonicalize = true;
         argIdx++;
-      } else if (arg === '--') {
+      } else if (arg === "--") {
         argIdx++;
         break;
       } else {
-        return { stdout: '', stderr: `readlink: invalid option -- '${arg.slice(1)}'\n`, exitCode: 1 };
+        return {
+          stdout: "",
+          stderr: `readlink: invalid option -- '${arg.slice(1)}'\n`,
+          exitCode: 1,
+        };
       }
     }
 
     const files = args.slice(argIdx);
 
     if (files.length === 0) {
-      return { stdout: '', stderr: 'readlink: missing operand\n', exitCode: 1 };
+      return { stdout: "", stderr: "readlink: missing operand\n", exitCode: 1 };
     }
 
-    let stdout = '';
+    let stdout = "";
     let anyError = false;
 
     for (const file of files) {
@@ -64,10 +68,11 @@ export const readlinkCommand: Command = {
             try {
               const target = await ctx.fs.readlink(currentPath);
               // If target is relative, resolve from current path's directory
-              if (target.startsWith('/')) {
+              if (target.startsWith("/")) {
                 currentPath = target;
               } else {
-                const dir = currentPath.substring(0, currentPath.lastIndexOf('/')) || '/';
+                const dir =
+                  currentPath.substring(0, currentPath.lastIndexOf("/")) || "/";
                 currentPath = ctx.fs.resolvePath(dir, target);
               }
             } catch {
@@ -75,11 +80,11 @@ export const readlinkCommand: Command = {
               break;
             }
           }
-          stdout += currentPath + '\n';
+          stdout += `${currentPath}\n`;
         } else {
           // Without -f, just read the symlink target
           const target = await ctx.fs.readlink(filePath);
-          stdout += target + '\n';
+          stdout += `${target}\n`;
         }
       } catch {
         if (!canonicalize) {
@@ -87,11 +92,11 @@ export const readlinkCommand: Command = {
           anyError = true;
         } else {
           // For -f mode, return the resolved path even if not a symlink
-          stdout += filePath + '\n';
+          stdout += `${filePath}\n`;
         }
       }
     }
 
-    return { stdout, stderr: '', exitCode: anyError ? 1 : 0 };
+    return { stdout, stderr: "", exitCode: anyError ? 1 : 0 };
   },
 };

@@ -1,16 +1,16 @@
-import { Command, CommandContext, ExecResult } from '../../types.js';
-import { hasHelpFlag, showHelp, unknownOption } from '../help.js';
+import type { Command, CommandContext, ExecResult } from "../../types.js";
+import { hasHelpFlag, showHelp, unknownOption } from "../help.js";
 
 const treeHelp = {
-  name: 'tree',
-  summary: 'list contents of directories in a tree-like format',
-  usage: 'tree [OPTION]... [DIRECTORY]...',
+  name: "tree",
+  summary: "list contents of directories in a tree-like format",
+  usage: "tree [OPTION]... [DIRECTORY]...",
   options: [
-    '-a          include hidden files',
-    '-d          list directories only',
-    '-L LEVEL    limit depth of directory tree',
-    '-f          print full path prefix for each file',
-    '    --help  display this help and exit',
+    "-a          include hidden files",
+    "-d          list directories only",
+    "-L LEVEL    limit depth of directory tree",
+    "-f          print full path prefix for each file",
+    "    --help  display this help and exit",
   ],
 };
 
@@ -22,7 +22,7 @@ interface TreeOptions {
 }
 
 export const treeCommand: Command = {
-  name: 'tree',
+  name: "tree",
 
   async execute(args: string[], ctx: CommandContext): Promise<ExecResult> {
     if (hasHelpFlag(args)) {
@@ -41,45 +41,44 @@ export const treeCommand: Command = {
     // Parse arguments
     for (let i = 0; i < args.length; i++) {
       const arg = args[i];
-      if (arg === '-a') {
+      if (arg === "-a") {
         options.showHidden = true;
-      } else if (arg === '-d') {
+      } else if (arg === "-d") {
         options.directoriesOnly = true;
-      } else if (arg === '-f') {
+      } else if (arg === "-f") {
         options.fullPath = true;
-      } else if (arg === '-L' && i + 1 < args.length) {
+      } else if (arg === "-L" && i + 1 < args.length) {
         options.maxDepth = parseInt(args[++i], 10);
-      } else if (arg.startsWith('--')) {
-        return unknownOption('tree', arg);
-      } else if (arg.startsWith('-') && arg.length > 1) {
+      } else if (arg.startsWith("--")) {
+        return unknownOption("tree", arg);
+      } else if (arg.startsWith("-") && arg.length > 1) {
         // Check combined short options
         for (const c of arg.slice(1)) {
-          if (c === 'a') options.showHidden = true;
-          else if (c === 'd') options.directoriesOnly = true;
-          else if (c === 'f') options.fullPath = true;
-          else if (c === 'L') {
+          if (c === "a") options.showHidden = true;
+          else if (c === "d") options.directoriesOnly = true;
+          else if (c === "f") options.fullPath = true;
+          else if (c === "L") {
             // -L requires argument, can't be combined
-            return unknownOption('tree', `-${c}`);
-          }
-          else return unknownOption('tree', `-${c}`);
+            return unknownOption("tree", `-${c}`);
+          } else return unknownOption("tree", `-${c}`);
         }
-      } else if (!arg.startsWith('-')) {
+      } else if (!arg.startsWith("-")) {
         directories.push(arg);
       }
     }
 
     // Default to current directory
     if (directories.length === 0) {
-      directories.push('.');
+      directories.push(".");
     }
 
-    let stdout = '';
-    let stderr = '';
+    let stdout = "";
+    let stderr = "";
     let dirCount = 0;
     let fileCount = 0;
 
     for (const dir of directories) {
-      const result = await buildTree(ctx, dir, options, '', 0);
+      const result = await buildTree(ctx, dir, options, "", 0);
       stdout += result.output;
       stderr += result.stderr;
       dirCount += result.dirCount;
@@ -87,11 +86,11 @@ export const treeCommand: Command = {
     }
 
     // Add summary
-    stdout += `\n${dirCount} director${dirCount === 1 ? 'y' : 'ies'}`;
+    stdout += `\n${dirCount} director${dirCount === 1 ? "y" : "ies"}`;
     if (!options.directoriesOnly) {
-      stdout += `, ${fileCount} file${fileCount === 1 ? '' : 's'}`;
+      stdout += `, ${fileCount} file${fileCount === 1 ? "" : "s"}`;
     }
-    stdout += '\n';
+    stdout += "\n";
 
     return { stdout, stderr, exitCode: stderr ? 1 : 0 };
   },
@@ -109,11 +108,11 @@ async function buildTree(
   path: string,
   options: TreeOptions,
   prefix: string,
-  depth: number
+  depth: number,
 ): Promise<TreeResult> {
   const result: TreeResult = {
-    output: '',
-    stderr: '',
+    output: "",
+    stderr: "",
     dirCount: 0,
     fileCount: 0,
   };
@@ -124,7 +123,7 @@ async function buildTree(
     const stat = await ctx.fs.stat(fullPath);
     if (!stat.isDirectory) {
       // Single file
-      result.output = path + '\n';
+      result.output = `${path}\n`;
       result.fileCount = 1;
       return result;
     }
@@ -134,7 +133,7 @@ async function buildTree(
   }
 
   // Root directory line
-  result.output = path + '\n';
+  result.output = `${path}\n`;
 
   // Check depth limit
   if (options.maxDepth !== null && depth >= options.maxDepth) {
@@ -145,8 +144,8 @@ async function buildTree(
     const entries = await ctx.fs.readdir(fullPath);
 
     // Filter and sort entries
-    let filteredEntries = entries.filter((e) => {
-      if (!options.showHidden && e.startsWith('.')) {
+    const filteredEntries = entries.filter((e) => {
+      if (!options.showHidden && e.startsWith(".")) {
         return false;
       }
       return true;
@@ -155,10 +154,10 @@ async function buildTree(
 
     for (let i = 0; i < filteredEntries.length; i++) {
       const entry = filteredEntries[i];
-      const entryPath = fullPath === '/' ? '/' + entry : fullPath + '/' + entry;
+      const entryPath = fullPath === "/" ? `/${entry}` : `${fullPath}/${entry}`;
       const isLast = i === filteredEntries.length - 1;
-      const connector = isLast ? '`-- ' : '|-- ';
-      const childPrefix = prefix + (isLast ? '    ' : '|   ');
+      const connector = isLast ? "`-- " : "|-- ";
+      const childPrefix = prefix + (isLast ? "    " : "|   ");
 
       try {
         const entryStat = await ctx.fs.stat(entryPath);
@@ -166,7 +165,7 @@ async function buildTree(
         if (entryStat.isDirectory) {
           result.dirCount++;
           const displayName = options.fullPath ? entryPath : entry;
-          result.output += prefix + connector + displayName + '\n';
+          result.output += `${prefix + connector + displayName}\n`;
 
           // Recurse into directory
           if (options.maxDepth === null || depth + 1 < options.maxDepth) {
@@ -175,7 +174,7 @@ async function buildTree(
               entryPath,
               options,
               childPrefix,
-              depth + 1
+              depth + 1,
             );
             result.output += subResult.output;
             result.dirCount += subResult.dirCount;
@@ -184,13 +183,13 @@ async function buildTree(
         } else if (!options.directoriesOnly) {
           result.fileCount++;
           const displayName = options.fullPath ? entryPath : entry;
-          result.output += prefix + connector + displayName + '\n';
+          result.output += `${prefix + connector + displayName}\n`;
         }
       } catch {
         // Skip entries we can't stat
       }
     }
-  } catch (error) {
+  } catch (_error) {
     result.stderr = `tree: ${path}: Permission denied\n`;
   }
 
@@ -202,11 +201,11 @@ async function buildTreeRecursive(
   path: string,
   options: TreeOptions,
   prefix: string,
-  depth: number
+  depth: number,
 ): Promise<TreeResult> {
   const result: TreeResult = {
-    output: '',
-    stderr: '',
+    output: "",
+    stderr: "",
     dirCount: 0,
     fileCount: 0,
   };
@@ -220,8 +219,8 @@ async function buildTreeRecursive(
     const entries = await ctx.fs.readdir(path);
 
     // Filter and sort entries
-    let filteredEntries = entries.filter((e) => {
-      if (!options.showHidden && e.startsWith('.')) {
+    const filteredEntries = entries.filter((e) => {
+      if (!options.showHidden && e.startsWith(".")) {
         return false;
       }
       return true;
@@ -230,10 +229,10 @@ async function buildTreeRecursive(
 
     for (let i = 0; i < filteredEntries.length; i++) {
       const entry = filteredEntries[i];
-      const entryPath = path === '/' ? '/' + entry : path + '/' + entry;
+      const entryPath = path === "/" ? `/${entry}` : `${path}/${entry}`;
       const isLast = i === filteredEntries.length - 1;
-      const connector = isLast ? '`-- ' : '|-- ';
-      const childPrefix = prefix + (isLast ? '    ' : '|   ');
+      const connector = isLast ? "`-- " : "|-- ";
+      const childPrefix = prefix + (isLast ? "    " : "|   ");
 
       try {
         const entryStat = await ctx.fs.stat(entryPath);
@@ -241,7 +240,7 @@ async function buildTreeRecursive(
         if (entryStat.isDirectory) {
           result.dirCount++;
           const displayName = options.fullPath ? entryPath : entry;
-          result.output += prefix + connector + displayName + '\n';
+          result.output += `${prefix + connector + displayName}\n`;
 
           // Recurse into directory
           const subResult = await buildTreeRecursive(
@@ -249,7 +248,7 @@ async function buildTreeRecursive(
             entryPath,
             options,
             childPrefix,
-            depth + 1
+            depth + 1,
           );
           result.output += subResult.output;
           result.dirCount += subResult.dirCount;
@@ -257,7 +256,7 @@ async function buildTreeRecursive(
         } else if (!options.directoriesOnly) {
           result.fileCount++;
           const displayName = options.fullPath ? entryPath : entry;
-          result.output += prefix + connector + displayName + '\n';
+          result.output += `${prefix + connector + displayName}\n`;
         }
       } catch {
         // Skip entries we can't stat

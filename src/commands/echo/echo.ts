@@ -1,7 +1,7 @@
-import { Command, CommandContext, ExecResult } from '../../types.js';
+import type { Command, CommandContext, ExecResult } from "../../types.js";
 
 export const echoCommand: Command = {
-  name: 'echo',
+  name: "echo",
 
   async execute(args: string[], _ctx: CommandContext): Promise<ExecResult> {
     let noNewline = false;
@@ -11,16 +11,16 @@ export const echoCommand: Command = {
     // Parse flags
     while (startIndex < args.length) {
       const arg = args[startIndex];
-      if (arg === '-n') {
+      if (arg === "-n") {
         noNewline = true;
         startIndex++;
-      } else if (arg === '-e') {
+      } else if (arg === "-e") {
         interpretEscapes = true;
         startIndex++;
-      } else if (arg === '-E') {
+      } else if (arg === "-E") {
         interpretEscapes = false;
         startIndex++;
-      } else if (arg === '-ne' || arg === '-en') {
+      } else if (arg === "-ne" || arg === "-en") {
         noNewline = true;
         interpretEscapes = true;
         startIndex++;
@@ -29,29 +29,29 @@ export const echoCommand: Command = {
       }
     }
 
-    let output = args.slice(startIndex).join(' ');
+    let output = args.slice(startIndex).join(" ");
 
     if (interpretEscapes) {
       // Process escape sequences - use placeholder for \\ first to avoid double-interpretation
       output = output
-        .replace(/\\\\/g, '\x00BACKSLASH\x00')  // Temporarily replace \\ with placeholder
-        .replace(/\\n/g, '\n')
-        .replace(/\\t/g, '\t')
-        .replace(/\\r/g, '\r')
-        .replace(/\\a/g, '\x07')
-        .replace(/\\b/g, '\b')
-        .replace(/\\f/g, '\f')
-        .replace(/\\v/g, '\v')
-        .replace(/\x00BACKSLASH\x00/g, '\\');  // Restore backslashes
+        .replace(/\\\\/g, "\x00BACKSLASH\x00") // Temporarily replace \\ with placeholder
+        .replace(/\\n/g, "\n")
+        .replace(/\\t/g, "\t")
+        .replace(/\\r/g, "\r")
+        .replace(/\\a/g, "\x07")
+        .replace(/\\b/g, "\b")
+        .replace(/\\f/g, "\f")
+        .replace(/\\v/g, "\v")
+        .replace(/\x00BACKSLASH\x00/g, "\\"); // Restore backslashes
     }
 
     if (!noNewline) {
-      output += '\n';
+      output += "\n";
     }
 
     return {
       stdout: output,
-      stderr: '',
+      stderr: "",
       exitCode: 0,
     };
   },

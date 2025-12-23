@@ -1,5 +1,5 @@
-import { BashEnv } from "../BashEnv.js";
-import { ExecResult } from "../types.js";
+import type { BashEnv } from "../BashEnv.js";
+import type { ExecResult } from "../types.js";
 
 export interface OutputMessage {
   type: "stdout" | "stderr";
@@ -16,9 +16,6 @@ export class Command {
   private bashEnv: BashEnv;
   private cmdLine: string;
   private resultPromise: Promise<ExecResult>;
-  private _stdout: string = "";
-  private _stderr: string = "";
-  private completed = false;
 
   constructor(bashEnv: BashEnv, cmdLine: string, cwd: string) {
     this.cmdId = crypto.randomUUID();
@@ -33,10 +30,7 @@ export class Command {
 
   private async execute(): Promise<ExecResult> {
     const result = await this.bashEnv.exec(this.cmdLine);
-    this._stdout = result.stdout;
-    this._stderr = result.stderr;
     this.exitCode = result.exitCode;
-    this.completed = true;
     return result;
   }
 

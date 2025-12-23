@@ -1,8 +1,8 @@
-import { Command, CommandContext, ExecResult } from '../../types.js';
-import { unknownOption } from '../help.js';
+import type { Command, CommandContext, ExecResult } from "../../types.js";
+import { unknownOption } from "../help.js";
 
 export const rmCommand: Command = {
-  name: 'rm',
+  name: "rm",
 
   async execute(args: string[], ctx: CommandContext): Promise<ExecResult> {
     let recursive = false;
@@ -11,18 +11,18 @@ export const rmCommand: Command = {
 
     // Parse arguments
     for (const arg of args) {
-      if (arg.startsWith('-') && !arg.startsWith('--')) {
+      if (arg.startsWith("-") && !arg.startsWith("--")) {
         for (const flag of arg.slice(1)) {
-          if (flag === 'r' || flag === 'R') recursive = true;
-          else if (flag === 'f') force = true;
-          else return unknownOption('rm', `-${flag}`);
+          if (flag === "r" || flag === "R") recursive = true;
+          else if (flag === "f") force = true;
+          else return unknownOption("rm", `-${flag}`);
         }
-      } else if (arg === '--recursive') {
+      } else if (arg === "--recursive") {
         recursive = true;
-      } else if (arg === '--force') {
+      } else if (arg === "--force") {
         force = true;
-      } else if (arg.startsWith('--')) {
-        return unknownOption('rm', arg);
+      } else if (arg.startsWith("--")) {
+        return unknownOption("rm", arg);
       } else {
         paths.push(arg);
       }
@@ -30,16 +30,16 @@ export const rmCommand: Command = {
 
     if (paths.length === 0) {
       if (force) {
-        return { stdout: '', stderr: '', exitCode: 0 };
+        return { stdout: "", stderr: "", exitCode: 0 };
       }
       return {
-        stdout: '',
-        stderr: 'rm: missing operand\n',
+        stdout: "",
+        stderr: "rm: missing operand\n",
         exitCode: 1,
       };
     }
 
-    let stderr = '';
+    let stderr = "";
     let exitCode = 0;
 
     for (const path of paths) {
@@ -54,10 +54,14 @@ export const rmCommand: Command = {
         await ctx.fs.rm(fullPath, { recursive, force });
       } catch (error) {
         if (!force) {
-          const message = error instanceof Error ? error.message : String(error);
-          if (message.includes('ENOENT') || message.includes('no such file')) {
+          const message =
+            error instanceof Error ? error.message : String(error);
+          if (message.includes("ENOENT") || message.includes("no such file")) {
             stderr += `rm: cannot remove '${path}': No such file or directory\n`;
-          } else if (message.includes('ENOTEMPTY') || message.includes('not empty')) {
+          } else if (
+            message.includes("ENOTEMPTY") ||
+            message.includes("not empty")
+          ) {
             stderr += `rm: cannot remove '${path}': Directory not empty\n`;
           } else {
             stderr += `rm: cannot remove '${path}': ${message}\n`;
@@ -67,6 +71,6 @@ export const rmCommand: Command = {
       }
     }
 
-    return { stdout: '', stderr, exitCode };
+    return { stdout: "", stderr, exitCode };
   },
 };

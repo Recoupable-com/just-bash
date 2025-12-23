@@ -1,4 +1,4 @@
-import { ExecResult } from '../types.js';
+import type { ExecResult } from "../types.js";
 
 export interface HelpInfo {
   name: string;
@@ -12,22 +12,22 @@ export function showHelp(info: HelpInfo): ExecResult {
   let output = `${info.name} - ${info.summary}\n\n`;
   output += `Usage: ${info.usage}\n`;
   if (info.options && info.options.length > 0) {
-    output += '\nOptions:\n';
+    output += "\nOptions:\n";
     for (const opt of info.options) {
       output += `  ${opt}\n`;
     }
   }
   if (info.notes && info.notes.length > 0) {
-    output += '\nNotes:\n';
+    output += "\nNotes:\n";
     for (const note of info.notes) {
       output += `  ${note}\n`;
     }
   }
-  return { stdout: output, stderr: '', exitCode: 0 };
+  return { stdout: output, stderr: "", exitCode: 0 };
 }
 
 export function hasHelpFlag(args: string[]): boolean {
-  return args.includes('--help');
+  return args.includes("--help");
 }
 
 /**
@@ -36,10 +36,10 @@ export function hasHelpFlag(args: string[]): boolean {
 export function unknownOption(cmdName: string, option: string): ExecResult {
   // For single-char options, use "invalid option -- 'x'" format
   // For long options, use "unrecognized option '--xxx'" format
-  const msg = option.startsWith('--')
+  const msg = option.startsWith("--")
     ? `${cmdName}: unrecognized option '${option}'\n`
-    : `${cmdName}: invalid option -- '${option.replace(/^-/, '')}'\n`;
-  return { stdout: '', stderr: msg, exitCode: 1 };
+    : `${cmdName}: invalid option -- '${option.replace(/^-/, "")}'\n`;
+  return { stdout: "", stderr: msg, exitCode: 1 };
 }
 
 /**
@@ -49,19 +49,23 @@ export function unknownOption(cmdName: string, option: string): ExecResult {
 export function findUnknownOption(
   args: string[],
   validShortOpts: string,
-  validLongOpts: string[] = []
+  validLongOpts: string[] = [],
 ): string | null {
   for (const arg of args) {
-    if (arg === '--help') continue;
-    if (arg === '--') break;
+    if (arg === "--help") continue;
+    if (arg === "--") break;
 
-    if (arg.startsWith('--')) {
+    if (arg.startsWith("--")) {
       // Long option - check if it matches any valid long option (with or without =value)
-      const optName = arg.split('=')[0];
-      if (!validLongOpts.some(valid => optName === valid || optName === `--${valid}`)) {
+      const optName = arg.split("=")[0];
+      if (
+        !validLongOpts.some(
+          (valid) => optName === valid || optName === `--${valid}`,
+        )
+      ) {
         return arg;
       }
-    } else if (arg.startsWith('-') && arg !== '-') {
+    } else if (arg.startsWith("-") && arg !== "-") {
       // Short option(s) - check each character
       for (const c of arg.slice(1)) {
         if (!validShortOpts.includes(c)) {

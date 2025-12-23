@@ -1,17 +1,17 @@
-import { Command, CommandContext, ExecResult } from '../../types.js';
-import { hasHelpFlag, showHelp, unknownOption } from '../help.js';
+import type { Command, CommandContext, ExecResult } from "../../types.js";
+import { hasHelpFlag, showHelp, unknownOption } from "../help.js";
 
 const duHelp = {
-  name: 'du',
-  summary: 'estimate file space usage',
-  usage: 'du [OPTION]... [FILE]...',
+  name: "du",
+  summary: "estimate file space usage",
+  usage: "du [OPTION]... [FILE]...",
   options: [
-    '-a          write counts for all files, not just directories',
-    '-h          print sizes in human readable format',
-    '-s          display only a total for each argument',
-    '-c          produce a grand total',
-    '--max-depth=N  print total for directory only if N or fewer levels deep',
-    '    --help  display this help and exit',
+    "-a          write counts for all files, not just directories",
+    "-h          print sizes in human readable format",
+    "-s          display only a total for each argument",
+    "-c          produce a grand total",
+    "--max-depth=N  print total for directory only if N or fewer levels deep",
+    "    --help  display this help and exit",
   ],
 };
 
@@ -24,7 +24,7 @@ interface DuOptions {
 }
 
 export const duCommand: Command = {
-  name: 'du',
+  name: "du",
 
   async execute(args: string[], ctx: CommandContext): Promise<ExecResult> {
     if (hasHelpFlag(args)) {
@@ -44,39 +44,39 @@ export const duCommand: Command = {
     // Parse arguments
     for (let i = 0; i < args.length; i++) {
       const arg = args[i];
-      if (arg === '-a') {
+      if (arg === "-a") {
         options.allFiles = true;
-      } else if (arg === '-h') {
+      } else if (arg === "-h") {
         options.humanReadable = true;
-      } else if (arg === '-s') {
+      } else if (arg === "-s") {
         options.summarize = true;
-      } else if (arg === '-c') {
+      } else if (arg === "-c") {
         options.grandTotal = true;
-      } else if (arg.startsWith('--max-depth=')) {
-        options.maxDepth = parseInt(arg.slice('--max-depth='.length), 10);
-      } else if (arg.startsWith('--')) {
-        return unknownOption('du', arg);
-      } else if (arg.startsWith('-') && arg.length > 1) {
+      } else if (arg.startsWith("--max-depth=")) {
+        options.maxDepth = parseInt(arg.slice("--max-depth=".length), 10);
+      } else if (arg.startsWith("--")) {
+        return unknownOption("du", arg);
+      } else if (arg.startsWith("-") && arg.length > 1) {
         // Check combined short options
         for (const c of arg.slice(1)) {
-          if (c === 'a') options.allFiles = true;
-          else if (c === 'h') options.humanReadable = true;
-          else if (c === 's') options.summarize = true;
-          else if (c === 'c') options.grandTotal = true;
-          else return unknownOption('du', `-${c}`);
+          if (c === "a") options.allFiles = true;
+          else if (c === "h") options.humanReadable = true;
+          else if (c === "s") options.summarize = true;
+          else if (c === "c") options.grandTotal = true;
+          else return unknownOption("du", `-${c}`);
         }
-      } else if (!arg.startsWith('-')) {
+      } else if (!arg.startsWith("-")) {
         targets.push(arg);
       }
     }
 
     // Default to current directory
     if (targets.length === 0) {
-      targets.push('.');
+      targets.push(".");
     }
 
-    let stdout = '';
-    let stderr = '';
+    let stdout = "";
+    let stderr = "";
     let grandTotal = 0;
 
     for (const target of targets) {
@@ -95,7 +95,7 @@ export const duCommand: Command = {
     }
 
     if (options.grandTotal && targets.length > 0) {
-      stdout += formatSize(grandTotal, options.humanReadable) + '\ttotal\n';
+      stdout += `${formatSize(grandTotal, options.humanReadable)}\ttotal\n`;
     }
 
     return { stdout, stderr, exitCode: stderr ? 1 : 0 };
@@ -113,12 +113,12 @@ async function calculateSize(
   fullPath: string,
   displayPath: string,
   options: DuOptions,
-  depth: number
+  depth: number,
 ): Promise<SizeResult> {
   const result: SizeResult = {
-    output: '',
+    output: "",
     totalSize: 0,
-    stderr: '',
+    stderr: "",
   };
 
   try {
@@ -128,7 +128,11 @@ async function calculateSize(
       // Single file
       result.totalSize = stat.size;
       if (options.allFiles || depth === 0) {
-        result.output = formatSize(stat.size, options.humanReadable) + '\t' + displayPath + '\n';
+        result.output =
+          formatSize(stat.size, options.humanReadable) +
+          "\t" +
+          displayPath +
+          "\n";
       }
       return result;
     }
@@ -138,8 +142,9 @@ async function calculateSize(
     let dirSize = 0;
 
     for (const entry of entries) {
-      const entryPath = fullPath === '/' ? '/' + entry : fullPath + '/' + entry;
-      const entryDisplayPath = displayPath === '.' ? entry : displayPath + '/' + entry;
+      const entryPath = fullPath === "/" ? `/${entry}` : `${fullPath}/${entry}`;
+      const entryDisplayPath =
+        displayPath === "." ? entry : `${displayPath}/${entry}`;
 
       try {
         const entryStat = await ctx.fs.stat(entryPath);
@@ -150,7 +155,7 @@ async function calculateSize(
             entryPath,
             entryDisplayPath,
             options,
-            depth + 1
+            depth + 1,
           );
           dirSize += subResult.totalSize;
 
@@ -166,7 +171,11 @@ async function calculateSize(
         } else {
           dirSize += entryStat.size;
           if (options.allFiles && !options.summarize) {
-            result.output += formatSize(entryStat.size, options.humanReadable) + '\t' + entryDisplayPath + '\n';
+            result.output +=
+              formatSize(entryStat.size, options.humanReadable) +
+              "\t" +
+              entryDisplayPath +
+              "\n";
           }
         }
       } catch {
@@ -177,11 +186,14 @@ async function calculateSize(
     result.totalSize = dirSize;
 
     // Output this directory if within depth limit
-    if (options.summarize || options.maxDepth === null || depth <= options.maxDepth) {
-      result.output += formatSize(dirSize, options.humanReadable) + '\t' + displayPath + '\n';
+    if (
+      options.summarize ||
+      options.maxDepth === null ||
+      depth <= options.maxDepth
+    ) {
+      result.output += `${formatSize(dirSize, options.humanReadable)}\t${displayPath}\n`;
     }
-
-  } catch (error) {
+  } catch (_error) {
     result.stderr = `du: cannot read directory '${displayPath}': Permission denied\n`;
   }
 
@@ -195,12 +207,12 @@ function formatSize(bytes: number, humanReadable: boolean): string {
   }
 
   if (bytes < 1024) {
-    return bytes + '';
+    return `${bytes}`;
   } else if (bytes < 1024 * 1024) {
-    return (bytes / 1024).toFixed(1) + 'K';
+    return `${(bytes / 1024).toFixed(1)}K`;
   } else if (bytes < 1024 * 1024 * 1024) {
-    return (bytes / (1024 * 1024)).toFixed(1) + 'M';
+    return `${(bytes / (1024 * 1024)).toFixed(1)}M`;
   } else {
-    return (bytes / (1024 * 1024 * 1024)).toFixed(1) + 'G';
+    return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)}G`;
   }
 }

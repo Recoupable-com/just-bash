@@ -1,70 +1,70 @@
-import { describe, it, expect } from 'vitest';
-import { BashEnv } from '../../BashEnv.js';
+import { describe, expect, it } from "vitest";
+import { BashEnv } from "../../BashEnv.js";
 
-describe('env command', () => {
-  it('should print all environment variables', async () => {
+describe("env command", () => {
+  it("should print all environment variables", async () => {
     const env = new BashEnv({
-      env: { FOO: 'bar', BAZ: 'qux' },
+      env: { FOO: "bar", BAZ: "qux" },
     });
-    const result = await env.exec('env');
-    expect(result.stdout).toContain('FOO=bar');
-    expect(result.stdout).toContain('BAZ=qux');
+    const result = await env.exec("env");
+    expect(result.stdout).toContain("FOO=bar");
+    expect(result.stdout).toContain("BAZ=qux");
     expect(result.exitCode).toBe(0);
   });
 
-  it('should include default environment variables', async () => {
+  it("should include default environment variables", async () => {
     const env = new BashEnv();
-    const result = await env.exec('env');
-    expect(result.stdout).toContain('HOME=/');
-    expect(result.stdout).toContain('PATH=/bin');
+    const result = await env.exec("env");
+    expect(result.stdout).toContain("HOME=/");
+    expect(result.stdout).toContain("PATH=/bin");
   });
 
-  it('should show help with --help', async () => {
+  it("should show help with --help", async () => {
     const env = new BashEnv();
-    const result = await env.exec('env --help');
-    expect(result.stdout).toContain('env');
-    expect(result.stdout).toContain('environment');
+    const result = await env.exec("env --help");
+    expect(result.stdout).toContain("env");
+    expect(result.stdout).toContain("environment");
     expect(result.exitCode).toBe(0);
   });
 });
 
-describe('printenv command', () => {
-  it('should print all environment variables without args', async () => {
+describe("printenv command", () => {
+  it("should print all environment variables without args", async () => {
     const env = new BashEnv({
-      env: { FOO: 'bar' },
+      env: { FOO: "bar" },
     });
-    const result = await env.exec('printenv');
-    expect(result.stdout).toContain('FOO=bar');
+    const result = await env.exec("printenv");
+    expect(result.stdout).toContain("FOO=bar");
     expect(result.exitCode).toBe(0);
   });
 
-  it('should print specific variable value', async () => {
+  it("should print specific variable value", async () => {
     const env = new BashEnv({
-      env: { FOO: 'bar', BAZ: 'qux' },
+      env: { FOO: "bar", BAZ: "qux" },
     });
-    const result = await env.exec('printenv FOO');
-    expect(result.stdout).toBe('bar\n');
+    const result = await env.exec("printenv FOO");
+    expect(result.stdout).toBe("bar\n");
     expect(result.exitCode).toBe(0);
   });
 
-  it('should print multiple variable values', async () => {
+  it("should print multiple variable values", async () => {
     const env = new BashEnv({
-      env: { FOO: 'bar', BAZ: 'qux' },
+      env: { FOO: "bar", BAZ: "qux" },
     });
-    const result = await env.exec('printenv FOO BAZ');
-    expect(result.stdout).toBe('bar\nqux\n');
+    const result = await env.exec("printenv FOO BAZ");
+    expect(result.stdout).toBe("bar\nqux\n");
   });
 
-  it('should return exit code 1 for missing variable', async () => {
+  it("should return exit code 1 for missing variable", async () => {
     const env = new BashEnv();
-    const result = await env.exec('printenv NONEXISTENT');
+    const result = await env.exec("printenv NONEXISTENT");
     expect(result.exitCode).toBe(1);
   });
 
-  it('should show help with --help', async () => {
+  it("should show help with --help", async () => {
     const env = new BashEnv();
-    const result = await env.exec('printenv --help');
-    expect(result.stdout).toContain('printenv');
+    const result = await env.exec("printenv --help");
+    expect(result.stdout).toContain("printenv");
     expect(result.exitCode).toBe(0);
   });
 });
