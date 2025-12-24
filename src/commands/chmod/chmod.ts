@@ -7,6 +7,7 @@ const chmodHelp = {
   usage: "chmod [OPTIONS] MODE FILE...",
   options: [
     "-R      change files recursively",
+    "-v      output a diagnostic for every file processed",
     "    --help display this help and exit",
   ],
 };
@@ -24,6 +25,7 @@ export const chmodCommand: Command = {
     }
 
     let recursive = false;
+    let verbose = false;
     let argIdx = 0;
 
     // Parse options
@@ -32,6 +34,9 @@ export const chmodCommand: Command = {
       if (arg === "-R" || arg === "--recursive") {
         recursive = true;
         argIdx++;
+      } else if (arg === "-v" || arg === "--verbose") {
+        verbose = true;
+        argIdx++;
       } else if (arg === "--") {
         argIdx++;
         break;
@@ -39,6 +44,13 @@ export const chmodCommand: Command = {
         // Mode might start with - for removing permissions, check if it looks like a mode
         if (/^[+-]?[rwxugo]+/.test(arg) || /^\d+$/.test(arg)) {
           break;
+        }
+        // Check for combined flags like -Rv
+        if (/^-[Rv]+$/.test(arg)) {
+          if (arg.includes("R")) recursive = true;
+          if (arg.includes("v")) verbose = true;
+          argIdx++;
+          continue;
         }
         return {
           stdout: "",
@@ -67,6 +79,7 @@ export const chmodCommand: Command = {
       };
     }
 
+    let stdout = "";
     let stderr = "";
     let anyError = false;
 
@@ -74,12 +87,21 @@ export const chmodCommand: Command = {
       const filePath = ctx.fs.resolvePath(ctx.cwd, file);
       try {
         await ctx.fs.chmod(filePath, modeValue);
+        if (verbose) {
+          stdout += `mode of '${file}' changed to ${modeValue.toString(8).padStart(4, "0")}\n`;
+        }
 
         if (recursive) {
           // Check if directory
           const stat = await ctx.fs.stat(filePath);
           if (stat.isDirectory) {
-            await chmodRecursive(ctx, filePath, modeValue);
+            const recursiveOutput = await chmodRecursive(
+              ctx,
+              filePath,
+              modeValue,
+              verbose,
+            );
+            stdout += recursiveOutput;
           }
         }
       } catch {
@@ -88,7 +110,7 @@ export const chmodCommand: Command = {
       }
     }
 
-    return { stdout: "", stderr, exitCode: anyError ? 1 : 0 };
+    return { stdout, stderr, exitCode: anyError ? 1 : 0 };
   },
 };
 
@@ -96,17 +118,23 @@ async function chmodRecursive(
   ctx: CommandContext,
   dir: string,
   mode: number,
-): Promise<void> {
+  verbose: boolean,
+): Promise<string> {
+  let output = "";
   const entries = await ctx.fs.readdir(dir);
   for (const entry of entries) {
     const fullPath = dir === "/" ? `/${entry}` : `${dir}/${entry}`;
     await ctx.fs.chmod(fullPath, mode);
+    if (verbose) {
+      output += `mode of '${fullPath}' changed to ${mode.toString(8).padStart(4, "0")}\n`;
+    }
 
     const stat = await ctx.fs.stat(fullPath);
     if (stat.isDirectory) {
-      await chmodRecursive(ctx, fullPath, mode);
+      output += await chmodRecursive(ctx, fullPath, mode, verbose);
     }
   }
+  return output;
 }
 
 function parseMode(modeStr: string): number {

@@ -7,6 +7,7 @@ export const rmCommand: Command = {
   async execute(args: string[], ctx: CommandContext): Promise<ExecResult> {
     let recursive = false;
     let force = false;
+    let verbose = false;
     const paths: string[] = [];
 
     // Parse arguments
@@ -15,12 +16,15 @@ export const rmCommand: Command = {
         for (const flag of arg.slice(1)) {
           if (flag === "r" || flag === "R") recursive = true;
           else if (flag === "f") force = true;
+          else if (flag === "v") verbose = true;
           else return unknownOption("rm", `-${flag}`);
         }
       } else if (arg === "--recursive") {
         recursive = true;
       } else if (arg === "--force") {
         force = true;
+      } else if (arg === "--verbose" || arg === "-v") {
+        verbose = true;
       } else if (arg.startsWith("--")) {
         return unknownOption("rm", arg);
       } else {
@@ -39,6 +43,7 @@ export const rmCommand: Command = {
       };
     }
 
+    let stdout = "";
     let stderr = "";
     let exitCode = 0;
 
@@ -52,6 +57,9 @@ export const rmCommand: Command = {
           continue;
         }
         await ctx.fs.rm(fullPath, { recursive, force });
+        if (verbose) {
+          stdout += `removed '${path}'\n`;
+        }
       } catch (error) {
         if (!force) {
           const message =
@@ -71,6 +79,6 @@ export const rmCommand: Command = {
       }
     }
 
-    return { stdout: "", stderr, exitCode };
+    return { stdout, stderr, exitCode };
   },
 };

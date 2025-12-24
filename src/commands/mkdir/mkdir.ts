@@ -6,19 +6,23 @@ export const mkdirCommand: Command = {
 
   async execute(args: string[], ctx: CommandContext): Promise<ExecResult> {
     let recursive = false;
+    let verbose = false;
     const dirs: string[] = [];
 
     // Parse arguments
     for (const arg of args) {
       if (arg === "-p" || arg === "--parents") {
         recursive = true;
+      } else if (arg === "-v" || arg === "--verbose") {
+        verbose = true;
       } else if (arg.startsWith("--")) {
         return unknownOption("mkdir", arg);
       } else if (arg.startsWith("-")) {
         for (const c of arg.slice(1)) {
-          if (c !== "p") return unknownOption("mkdir", `-${c}`);
+          if (c === "p") recursive = true;
+          else if (c === "v") verbose = true;
+          else return unknownOption("mkdir", `-${c}`);
         }
-        recursive = true;
       } else {
         dirs.push(arg);
       }
@@ -32,6 +36,7 @@ export const mkdirCommand: Command = {
       };
     }
 
+    let stdout = "";
     let stderr = "";
     let exitCode = 0;
 
@@ -39,6 +44,9 @@ export const mkdirCommand: Command = {
       try {
         const fullPath = ctx.fs.resolvePath(ctx.cwd, dir);
         await ctx.fs.mkdir(fullPath, { recursive });
+        if (verbose) {
+          stdout += `mkdir: created directory '${dir}'\n`;
+        }
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         if (message.includes("ENOENT") || message.includes("no such file")) {
@@ -55,6 +63,6 @@ export const mkdirCommand: Command = {
       }
     }
 
-    return { stdout: "", stderr, exitCode };
+    return { stdout, stderr, exitCode };
   },
 };

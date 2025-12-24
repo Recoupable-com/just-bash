@@ -1,14 +1,17 @@
 export { BashEnv, BashEnvOptions } from "./BashEnv.js";
 export { VirtualFs } from "./fs.js";
 export type {
+  BufferEncoding,
   CpOptions,
   DirectoryEntry,
+  FileContent,
   FileEntry,
   FileSystemFactory,
   FsEntry,
   FsStat,
   MkdirOptions,
   RmOptions,
+  SymlinkEntry,
 } from "./fs-interface.js";
 // Vercel Sandbox API compatible exports
 export {

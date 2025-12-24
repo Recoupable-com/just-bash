@@ -2,8 +2,19 @@
   "name": "bash-env",
   "version": "1.0.0",
   "description": "A simulated bash environment with virtual filesystem",
-  "main": "index.js",
   "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "bin": {
     "vshell": "./dist/cli/shell.js"
   },

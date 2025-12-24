@@ -8,6 +8,8 @@ const headHelp = {
   options: [
     "-c, --bytes=NUM    print the first NUM bytes",
     "-n, --lines=NUM    print the first NUM lines (default 10)",
+    "-q, --quiet        never print headers giving file names",
+    "-v, --verbose      always print headers giving file names",
     "    --help         display this help and exit",
   ],
 };
@@ -22,6 +24,8 @@ export const headCommand: Command = {
 
     let lines = 10;
     let bytes: number | null = null;
+    let quiet = false;
+    let verbose = false;
     const files: string[] = [];
 
     // Parse arguments
@@ -39,6 +43,10 @@ export const headCommand: Command = {
         bytes = parseInt(arg.slice(8), 10);
       } else if (arg.startsWith("--lines=")) {
         lines = parseInt(arg.slice(8), 10);
+      } else if (arg === "-q" || arg === "--quiet" || arg === "--silent") {
+        quiet = true;
+      } else if (arg === "-v" || arg === "--verbose") {
+        verbose = true;
       } else if (arg.match(/^-\d+$/)) {
         lines = parseInt(arg.slice(1), 10);
       } else if (arg.startsWith("--")) {
@@ -98,11 +106,15 @@ export const headCommand: Command = {
     let stderr = "";
     let exitCode = 0;
 
+    // Determine whether to show headers
+    // -v always shows, -q never shows, default shows for multiple files
+    const showHeaders = verbose || (!quiet && files.length > 1);
+
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
 
-      // Show header for multiple files
-      if (files.length > 1) {
+      // Show header if needed
+      if (showHeaders) {
         if (i > 0) stdout += "\n";
         stdout += `==> ${file} <==\n`;
       }

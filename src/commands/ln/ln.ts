@@ -9,6 +9,7 @@ const lnHelp = {
     "-s      create a symbolic link instead of a hard link",
     "-f      remove existing destination files",
     "-n      treat LINK_NAME as a normal file if it is a symbolic link to a directory",
+    "-v      print name of each linked file",
     "    --help display this help and exit",
   ],
 };
@@ -23,6 +24,7 @@ export const lnCommand: Command = {
 
     let symbolic = false;
     let force = false;
+    let verbose = false;
     let argIdx = 0;
 
     // Parse options
@@ -34,12 +36,18 @@ export const lnCommand: Command = {
       } else if (arg === "-f" || arg === "--force") {
         force = true;
         argIdx++;
+      } else if (arg === "-v" || arg === "--verbose") {
+        verbose = true;
+        argIdx++;
       } else if (arg === "-n" || arg === "--no-dereference") {
         // For now, just accept the flag but don't implement special behavior
         argIdx++;
-      } else if (arg === "-sf" || arg === "-fs") {
-        symbolic = true;
-        force = true;
+      } else if (/^-[sfvn]+$/.test(arg)) {
+        // Combined short flags like -sf, -sfv, etc.
+        if (arg.includes("s")) symbolic = true;
+        if (arg.includes("f")) force = true;
+        if (arg.includes("v")) verbose = true;
+        // -n is accepted but not implemented
         argIdx++;
       } else if (arg === "--") {
         argIdx++;
@@ -114,6 +122,10 @@ export const lnCommand: Command = {
       return { stdout: "", stderr: `ln: ${err.message}\n`, exitCode: 1 };
     }
 
-    return { stdout: "", stderr: "", exitCode: 0 };
+    let stdout = "";
+    if (verbose) {
+      stdout = `'${linkName}' -> '${target}'\n`;
+    }
+    return { stdout, stderr: "", exitCode: 0 };
   },
 };

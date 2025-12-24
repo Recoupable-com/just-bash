@@ -15,7 +15,7 @@ pnpm install
 ### Programmatic API
 
 ```typescript
-import { BashEnv } from "./src/BashEnv.js";
+import { BashEnv } from "bash-env";
 
 // Default layout: starts in /home/user with /bin, /tmp
 const env = new BashEnv();
@@ -28,6 +28,12 @@ const custom = new BashEnv({
   files: { "/data/file.txt": "content" },
 });
 await custom.exec("cat /data/file.txt");
+
+// Binary files with Uint8Array
+const binary = new BashEnv({
+  files: { "/data.bin": new Uint8Array([0x48, 0x65, 0x6c, 0x6c, 0x6f]) },
+});
+const buf = await binary.fs.readFileBuffer("/data.bin"); // Uint8Array
 
 // With custom execution limits
 const limited = new BashEnv({
