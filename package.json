@@ -32,7 +32,8 @@
     "README.md"
   ],
   "bin": {
-    "vshell": "./dist/cli/shell.js"
+    "bash-env": "./dist/cli/bash-env.js",
+    "bash-env-shell": "./dist/cli/shell.js"
   },
   "scripts": {
     "build": "tsc",

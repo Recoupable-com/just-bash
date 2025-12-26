@@ -118,6 +118,13 @@ export interface OverlayFsOptions {
    * Defaults to "/home/user/project".
    */
   mountPoint?: string;
+
+  /**
+   * If true, all write operations will throw an error.
+   * Useful for truly read-only access to the filesystem.
+   * Defaults to false.
+   */
+  readOnly?: boolean;
 }
 
 /** Default mount point for OverlayFs */
@@ -126,6 +133,7 @@ const DEFAULT_MOUNT_POINT = "/home/user/project";
 export class OverlayFs implements IFileSystem {
   private readonly root: string;
   private readonly mountPoint: string;
+  private readonly readOnly: boolean;
   private readonly memory: Map<string, MemoryEntry> = new Map();
   private readonly deleted: Set<string> = new Set();
 
@@ -140,6 +148,9 @@ export class OverlayFs implements IFileSystem {
       throw new Error(`Mount point must be an absolute path: ${mp}`);
     }
 
+    // Set read-only mode
+    this.readOnly = options.readOnly ?? false;
+
     // Verify root exists and is a directory
     if (!fs.existsSync(this.root)) {
       throw new Error(`OverlayFs root does not exist: ${this.root}`);
@@ -151,6 +162,15 @@ export class OverlayFs implements IFileSystem {
 
     // Create mount point directory structure in memory layer
     this.createMountPointDirs();
+  }
+
+  /**
+   * Throws an error if the filesystem is in read-only mode.
+   */
+  private assertWritable(operation: string): void {
+    if (this.readOnly) {
+      throw new Error(`EROFS: read-only file system, ${operation}`);
+    }
   }
 
   /**
@@ -379,6 +399,7 @@ export class OverlayFs implements IFileSystem {
     content: FileContent,
     options?: WriteFileOptions | BufferEncoding,
   ): Promise<void> {
+    this.assertWritable(`write '${path}'`);
     const normalized = this.normalizePath(path);
     this.ensureParentDirs(normalized);
 
@@ -399,6 +420,7 @@ export class OverlayFs implements IFileSystem {
     content: FileContent,
     options?: WriteFileOptions | BufferEncoding,
   ): Promise<void> {
+    this.assertWritable(`append '${path}'`);
     const normalized = this.normalizePath(path);
     const encoding = getEncoding(options);
     const newBuffer = toBuffer(content, encoding);
@@ -553,6 +575,7 @@ export class OverlayFs implements IFileSystem {
   }
 
   async mkdir(path: string, options?: MkdirOptions): Promise<void> {
+    this.assertWritable(`mkdir '${path}'`);
     const normalized = this.normalizePath(path);
 
     // Check if it exists (in memory or real fs)
@@ -647,6 +670,7 @@ export class OverlayFs implements IFileSystem {
   }
 
   async rm(path: string, options?: RmOptions): Promise<void> {
+    this.assertWritable(`rm '${path}'`);
     const normalized = this.normalizePath(path);
 
     const exists = await this.existsInOverlay(normalized);
@@ -681,6 +705,7 @@ export class OverlayFs implements IFileSystem {
   }
 
   async cp(src: string, dest: string, options?: CpOptions): Promise<void> {
+    this.assertWritable(`cp '${dest}'`);
     const srcNorm = this.normalizePath(src);
     const destNorm = this.normalizePath(dest);
 
@@ -710,6 +735,7 @@ export class OverlayFs implements IFileSystem {
   }
 
   async mv(src: string, dest: string): Promise<void> {
+    this.assertWritable(`mv '${dest}'`);
     await this.cp(src, dest, { recursive: true });
     await this.rm(src, { recursive: true });
   }
@@ -764,6 +790,7 @@ export class OverlayFs implements IFileSystem {
   }
 
   async chmod(path: string, mode: number): Promise<void> {
+    this.assertWritable(`chmod '${path}'`);
     const normalized = this.normalizePath(path);
 
     const exists = await this.existsInOverlay(normalized);
@@ -798,6 +825,7 @@ export class OverlayFs implements IFileSystem {
   }
 
   async symlink(target: string, linkPath: string): Promise<void> {
+    this.assertWritable(`symlink '${linkPath}'`);
     const normalized = this.normalizePath(linkPath);
 
     const exists = await this.existsInOverlay(normalized);
@@ -816,6 +844,7 @@ export class OverlayFs implements IFileSystem {
   }
 
   async link(existingPath: string, newPath: string): Promise<void> {
+    this.assertWritable(`link '${newPath}'`);
     const existingNorm = this.normalizePath(existingPath);
     const newNorm = this.normalizePath(newPath);
 

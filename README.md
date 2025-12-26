@@ -125,6 +125,37 @@ await sandbox.mkDir("/app/logs", { recursive: true });
 await sandbox.stop();
 ```
 
+### CLI Binary
+
+After installing globally (`npm install -g bash-env`), use the `bash-env` command as a secure alternative to `bash` for AI agents:
+
+```bash
+# Execute inline script
+bash-env -c 'ls -la && cat package.json | head -5'
+
+# Execute with specific project root
+bash-env -c 'grep -r "TODO" src/' --root /path/to/project
+
+# Pipe script from stdin
+echo 'find . -name "*.ts" | wc -l' | bash-env
+
+# Execute a script file
+bash-env ./scripts/deploy.sh
+
+# Get JSON output for programmatic use
+bash-env -c 'echo hello' --json
+# Output: {"stdout":"hello\n","stderr":"","exitCode":0}
+```
+
+The CLI uses OverlayFS - reads come from the real filesystem, but all writes stay in memory and are discarded after execution. The project root is mounted at `/home/user/project`.
+
+Options:
+- `-c <script>` - Execute script from argument
+- `--root <path>` - Root directory (default: current directory)
+- `--cwd <path>` - Working directory in sandbox
+- `-e, --errexit` - Exit on first error
+- `--json` - Output as JSON
+
 ### Interactive Shell
 
 ```bash
@@ -153,7 +184,7 @@ pnpm shell --no-network
 
 ### Shell Utilities
 
-`alias`, `bash`, `chmod`, `clear`, `date`, `false`, `help`, `history`, `sh`, `sleep`, `true`, `unalias`
+`alias`, `bash`, `chmod`, `clear`, `date`, `expr`, `false`, `help`, `history`, `seq`, `sh`, `sleep`, `timeout`, `true`, `unalias`, `which`
 
 ### Network Commands
 
