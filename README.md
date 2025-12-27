@@ -95,7 +95,7 @@ const overlay2 = new OverlayFs({ root: "/path/to/project", mountPoint: "/" });
 
 ### AI SDK Tool
 
-Creates a bash tool for use with the [AI SDK](https://ai-sdk.dev/):
+Creates a bash tool for use with the [AI SDK](https://ai-sdk.dev/), because [agents love bash](https://vercel.com/blog/we-removed-80-percent-of-our-agents-tools).
 
 ```typescript
 import { createBashTool } from "just-bash/ai";
