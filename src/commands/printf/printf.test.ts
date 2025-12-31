@@ -85,6 +85,36 @@ describe("printf", () => {
       const result = await env.exec('printf "\\101\\102\\103"');
       expect(result.stdout).toBe("ABC");
     });
+
+    it("should handle escape character \\e for ANSI codes", async () => {
+      const env = new Bash();
+      const result = await env.exec('printf "\\e[31mred\\e[0m"');
+      expect(result.stdout).toBe("\x1b[31mred\x1b[0m");
+    });
+
+    it("should handle \\E as alias for \\e", async () => {
+      const env = new Bash();
+      const result = await env.exec('printf "\\E[1mbold\\E[0m"');
+      expect(result.stdout).toBe("\x1b[1mbold\x1b[0m");
+    });
+
+    it("should handle unicode \\u escape", async () => {
+      const env = new Bash();
+      const result = await env.exec('printf "\\u2764"');
+      expect(result.stdout).toBe("❤");
+    });
+
+    it("should handle unicode \\U escape for emoji", async () => {
+      const env = new Bash();
+      const result = await env.exec('printf "\\U1F600"');
+      expect(result.stdout).toBe("😀");
+    });
+
+    it("should handle hex escape \\x", async () => {
+      const env = new Bash();
+      const result = await env.exec('printf "\\x41\\x42\\x43"');
+      expect(result.stdout).toBe("ABC");
+    });
   });
 
   describe("width and precision", () => {

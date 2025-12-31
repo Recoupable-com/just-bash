@@ -316,6 +316,48 @@ describe("find -printf", () => {
       expect(result.stderr).toBe("");
       expect(result.exitCode).toBe(0);
     });
+
+    it("should handle \\e escape for ANSI colors", async () => {
+      const env = new Bash({
+        files: {
+          "/dir/a.txt": "a",
+        },
+      });
+      const result = await env.exec(
+        'find /dir -type f -printf "\\e[32m%f\\e[0m\\n"',
+      );
+      expect(result.stdout).toBe("\x1b[32ma.txt\x1b[0m\n");
+      expect(result.stderr).toBe("");
+      expect(result.exitCode).toBe(0);
+    });
+
+    it("should handle \\u unicode escape", async () => {
+      const env = new Bash({
+        files: {
+          "/dir/a.txt": "a",
+        },
+      });
+      const result = await env.exec(
+        'find /dir -type f -printf "\\u2714 %f\\n"',
+      );
+      expect(result.stdout).toBe("✔ a.txt\n");
+      expect(result.stderr).toBe("");
+      expect(result.exitCode).toBe(0);
+    });
+
+    it("should handle \\U unicode escape for emoji", async () => {
+      const env = new Bash({
+        files: {
+          "/dir/a.txt": "a",
+        },
+      });
+      const result = await env.exec(
+        'find /dir -type f -printf "\\U1F4C4 %f\\n"',
+      );
+      expect(result.stdout).toBe("📄 a.txt\n");
+      expect(result.stderr).toBe("");
+      expect(result.exitCode).toBe(0);
+    });
   });
 
   describe("time directives", () => {

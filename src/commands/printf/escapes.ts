@@ -84,7 +84,8 @@ export function parseWidthPrecision(
 
 /**
  * Process escape sequences in a string
- * Handles: \n, \t, \r, \\, \a, \b, \f, \v, \0NNN (octal), \xHH (hex)
+ * Handles: \n, \t, \r, \\, \a, \b, \f, \v, \e, \0NNN (octal), \xHH (hex),
+ *          \uHHHH (unicode), \UHHHHHHHH (unicode)
  */
 export function processEscapes(str: string): string {
   let result = "";
@@ -126,6 +127,12 @@ export function processEscapes(str: string): string {
           result += "\v";
           i += 2;
           break;
+        case "e":
+        case "E":
+          // Escape character (0x1B) - used for ANSI color codes
+          result += "\x1b";
+          i += 2;
+          break;
         case "0":
         case "1":
         case "2":
@@ -146,7 +153,7 @@ export function processEscapes(str: string): string {
           break;
         }
         case "x":
-          // Hex escape sequence
+          // Hex escape sequence \xHH
           if (
             i + 3 < str.length &&
             /[0-9a-fA-F]{2}/.test(str.slice(i + 2, i + 4))
@@ -160,6 +167,40 @@ export function processEscapes(str: string): string {
             i++;
           }
           break;
+        case "u": {
+          // Unicode escape \uHHHH (1-4 hex digits)
+          let hex = "";
+          let j = i + 2;
+          while (j < str.length && j < i + 6 && /[0-9a-fA-F]/.test(str[j])) {
+            hex += str[j];
+            j++;
+          }
+          if (hex) {
+            result += String.fromCodePoint(parseInt(hex, 16));
+            i = j;
+          } else {
+            result += "\\u";
+            i += 2;
+          }
+          break;
+        }
+        case "U": {
+          // Unicode escape \UHHHHHHHH (1-8 hex digits)
+          let hex = "";
+          let j = i + 2;
+          while (j < str.length && j < i + 10 && /[0-9a-fA-F]/.test(str[j])) {
+            hex += str[j];
+            j++;
+          }
+          if (hex) {
+            result += String.fromCodePoint(parseInt(hex, 16));
+            i = j;
+          } else {
+            result += "\\U";
+            i += 2;
+          }
+          break;
+        }
         default:
           result += str[i];
           i++;
