@@ -76,6 +76,45 @@ export function createAgentCommand(term: TerminalWriter) {
       let buffer = "";
       let isStreaming = false; // Track if we're streaming thinking
 
+      // "Thinking..." indicator state
+      let thinkingTimeout: ReturnType<typeof setTimeout> | null = null;
+      let showingThinking = false;
+
+      const showThinking = () => {
+        if (!showingThinking) {
+          showingThinking = true;
+          term.write("\x1b[2mThinking...\x1b[0m");
+        }
+      };
+
+      const clearThinking = (restart = true) => {
+        if (showingThinking) {
+          // Clear the "Thinking..." text: move to start of line and clear it
+          term.write("\r\x1b[K");
+          showingThinking = false;
+        }
+        if (thinkingTimeout) {
+          clearTimeout(thinkingTimeout);
+          thinkingTimeout = null;
+        }
+        // Restart timer for next potential pause
+        if (restart) {
+          thinkingTimeout = setTimeout(showThinking, 500);
+        }
+      };
+
+      const resetThinkingTimer = () => {
+        if (thinkingTimeout) {
+          clearTimeout(thinkingTimeout);
+        }
+        if (!showingThinking) {
+          thinkingTimeout = setTimeout(showThinking, 500);
+        }
+      };
+
+      // Start the initial thinking timer
+      resetThinkingTimer();
+
       // Helper to format and display tool result
       const formatToolResult = (tc: { toolName: string; args: unknown; result?: string }) => {
         if (!tc.result) return;
@@ -132,9 +171,11 @@ export function createAgentCommand(term: TerminalWriter) {
             // Collect text (don't stream - ASCII art breaks when streamed in chunks)
             if (data.type === "text-delta" && data.delta) {
               fullText += data.delta;
+              resetThinkingTimer(); // Got content, reset timer
             }
             // Handle tool input - show header immediately
             else if (data.type === "tool-input-available" && data.toolCallId) {
+              clearThinking(); // Clear "Thinking..." before showing tool
               // Add line break after text before tool calls
               if (fullText && !fullText.endsWith("\n")) {
                 term.write("\r\n");
@@ -183,6 +224,7 @@ export function createAgentCommand(term: TerminalWriter) {
             }
             // Handle reasoning/thinking tokens - stream in real-time
             else if (data.type === "reasoning-start") {
+              clearThinking(); // Clear "Thinking..." before actual reasoning
               // Start streaming thinking in dim italic
               isStreaming = true;
               term.write("\x1b[2m\x1b[3m"); // dim + italic
@@ -190,6 +232,7 @@ export function createAgentCommand(term: TerminalWriter) {
             else if (data.type === "reasoning-delta" && data.delta) {
               // Stream thinking tokens as they arrive
               term.write(formatForTerminal(data.delta));
+              resetThinkingTimer(); // Keep resetting while actively streaming
             }
             else if (data.type === "reasoning-end") {
               // End thinking block
@@ -222,6 +265,9 @@ export function createAgentCommand(term: TerminalWriter) {
           }
         }
       }
+
+      // Clean up thinking timer (don't restart - we're done)
+      clearThinking(false);
 
       // Write collected text at the end (not streamed to avoid ASCII art rendering issues)
       if (fullText) {
