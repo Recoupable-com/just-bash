@@ -4,6 +4,7 @@
  * This is the new implementation using proper lexer/parser/interpreter architecture.
  */
 
+import { mapToRecord } from "../../helpers/env.js";
 import { ExecutionLimitError } from "../../interpreter/errors.js";
 import type { Command, CommandContext, ExecResult } from "../../types.js";
 import { hasHelpFlag, showHelp, unknownOption } from "../help.js";
@@ -36,7 +37,8 @@ export const awkCommand2: Command = {
 
     let fieldSep = /\s+/;
     let fieldSepStr = " ";
-    const vars: Record<string, string | number> = {};
+    // Use null-prototype to prevent prototype pollution with user-controlled -v names
+    const vars: Record<string, string | number> = Object.create(null);
     let programIdx = 0;
 
     // Parse options
@@ -120,18 +122,21 @@ export const awkCommand2: Command = {
         : undefined,
     });
     runtimeCtx.FS = fieldSepStr;
-    runtimeCtx.vars = { ...vars };
+    // Use Object.assign with null-prototype to preserve safety
+    runtimeCtx.vars = Object.assign(Object.create(null), vars);
 
     // Set up ARGC/ARGV
     // ARGV[0] is "awk", ARGV[1..n] are the input files
     runtimeCtx.ARGC = files.length + 1;
-    runtimeCtx.ARGV = { "0": "awk" };
+    // Use null-prototype to prevent prototype pollution
+    runtimeCtx.ARGV = Object.create(null);
+    runtimeCtx.ARGV["0"] = "awk";
     for (let i = 0; i < files.length; i++) {
       runtimeCtx.ARGV[String(i + 1)] = files[i];
     }
 
-    // Set up ENVIRON from shell environment
-    runtimeCtx.ENVIRON = { ...ctx.env };
+    // Set up ENVIRON from shell environment (null-prototype prevents prototype pollution)
+    runtimeCtx.ENVIRON = mapToRecord(ctx.env);
 
     // Create interpreter
     const interp = new AwkInterpreter(runtimeCtx);
