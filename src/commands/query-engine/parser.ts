@@ -80,6 +80,8 @@ const KEYWORDS: Map<string, TokenType> = new Map([
   ["def", "DEF"],
 ]);
 
+const KEYWORD_TOKEN_TYPES: Set<TokenType> = new Set(KEYWORDS.values());
+
 function tokenize(input: string): Token[] {
   const tokens: Token[] = [];
   let pos = 0;
@@ -325,7 +327,7 @@ function tokenize(input: string): Token[] {
       }
       const keyword = KEYWORDS.get(ident);
       if (keyword) {
-        tokens.push({ type: keyword, pos: start });
+        tokens.push({ type: keyword, value: ident, pos: start });
       } else {
         tokens.push({ type: "IDENT", value: ident, pos: start });
       }
@@ -378,6 +380,35 @@ class Parser {
       );
     }
     return this.advance();
+  }
+
+  private isFieldNameAfterDot(dotOffset = 0): boolean {
+    const dot = this.peek(dotOffset);
+    const next = this.peek(dotOffset + 1);
+    if (next.type === "STRING") return true;
+    if (next.type === "IDENT" || KEYWORD_TOKEN_TYPES.has(next.type)) {
+      return next.pos === dot.pos + 1;
+    }
+    return false;
+  }
+
+  private isIdentLike(): boolean {
+    const t = this.peek().type;
+    return t === "IDENT" || KEYWORD_TOKEN_TYPES.has(t);
+  }
+
+  private consumeFieldNameAfterDot(dotToken: Token): string | null {
+    const next = this.peek();
+    if (next.type === "STRING") {
+      return this.advance().value as string;
+    }
+    if (
+      (next.type === "IDENT" || KEYWORD_TOKEN_TYPES.has(next.type)) &&
+      next.pos === dotToken.pos + 1
+    ) {
+      return this.advance().value as string;
+    }
+    return null;
   }
 
   parse(): AstNode {
@@ -461,7 +492,7 @@ class Parser {
 
     // Check for shorthand: $name or $name:pattern
     const tok = this.peek();
-    if (tok.type === "IDENT") {
+    if (tok.type === "IDENT" || KEYWORD_TOKEN_TYPES.has(tok.type)) {
       const name = tok.value as string;
       if (name.startsWith("$")) {
         this.advance();
@@ -687,10 +718,7 @@ class Parser {
     while (true) {
       if (this.match("QUESTION")) {
         expr = { type: "Optional", expr };
-      } else if (
-        this.check("DOT") &&
-        (this.peek(1).type === "IDENT" || this.peek(1).type === "STRING")
-      ) {
+      } else if (this.check("DOT") && this.isFieldNameAfterDot()) {
         this.advance(); // consume DOT
         const token = this.advance();
         const name = token.value as string;
@@ -730,7 +758,8 @@ class Parser {
     }
 
     // Identity or field access starting with dot
-    if (this.match("DOT")) {
+    if (this.check("DOT")) {
+      const dotToken = this.advance();
       // Check for .[] or .[n] or .[n:m]
       if (this.check("LBRACKET")) {
         this.advance();
@@ -752,10 +781,10 @@ class Parser {
         this.expect("RBRACKET", "Expected ']'");
         return { type: "Index", index: indexExpr };
       }
-      // .field or ."quoted-field"
-      if (this.check("IDENT") || this.check("STRING")) {
-        const name = this.advance().value as string;
-        return { type: "Field", name };
+      // .field or ."quoted-field" (keywords like .label are valid field names)
+      const fieldName = this.consumeFieldNameAfterDot(dotToken);
+      if (fieldName !== null) {
+        return { type: "Field", name: fieldName };
       }
       // Just identity
       return { type: "Identity" };
@@ -989,7 +1018,7 @@ class Parser {
           this.expect("RPAREN", "Expected ')'");
           this.expect("COLON", "Expected ':'");
           value = this.parseObjectValue();
-        } else if (this.check("IDENT")) {
+        } else if (this.isIdentLike()) {
           const ident = this.advance().value as string;
           if (this.match("COLON")) {
             // {key: value}
