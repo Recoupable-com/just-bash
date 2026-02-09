@@ -104,12 +104,30 @@ export async function POST(req: Request) {
       stopWhen: stepCountIs(20),
     });
 
-    return createAgentUIStreamResponse({
+    const response = await createAgentUIStreamResponse({
       agent,
       uiMessages: messages,
     });
-  } finally {
-    // Don't await — let it clean up in background so response isn't delayed
+
+    // Clean up sandbox after the stream finishes (not before).
+    // The original `finally` block killed the sandbox immediately when
+    // createAgentUIStreamResponse returned, before any tool calls ran.
+    const body = response.body;
+    if (body) {
+      const transform = new TransformStream();
+      body.pipeTo(transform.writable).finally(() => {
+        sandbox.stop().catch(() => {});
+      });
+      return new Response(transform.readable, {
+        headers: response.headers,
+        status: response.status,
+      });
+    }
+
     sandbox.stop().catch(() => {});
+    return response;
+  } catch (error) {
+    sandbox.stop().catch(() => {});
+    throw error;
   }
 }
