@@ -1,7 +1,7 @@
 import { Sandbox } from "@vercel/sandbox";
 import { readdirSync, readFileSync } from "fs";
 import { join, relative } from "path";
-import { createSandbox } from "@/lib/recoup-api/createSandbox";
+import { getSnapshotId } from "@/lib/recoup-api/getSnapshotId";
 
 const SANDBOX_CWD = "/vercel/sandbox";
 
@@ -34,14 +34,16 @@ export async function createNewSandbox(
   agentDataDir: string,
 ): Promise<Sandbox> {
   const t0 = Date.now();
-  const sandboxId = await createSandbox(bearerToken);
-  console.log(`[timing] POST /api/sandboxes: ${Date.now() - t0}ms (sandboxId: ${sandboxId})`);
+  const snapshotId = await getSnapshotId(bearerToken);
+  console.log(`[timing] GET /api/sandboxes: ${Date.now() - t0}ms (snapshotId: ${snapshotId})`);
 
-  if (sandboxId) {
+  if (snapshotId) {
     try {
       const t1 = Date.now();
-      const sandbox = await Sandbox.get({ sandboxId });
-      console.log(`[timing] Sandbox.get: ${Date.now() - t1}ms`);
+      const sandbox = await Sandbox.create({
+        source: { type: "snapshot", snapshotId },
+      });
+      console.log(`[timing] Sandbox.create (snapshot): ${Date.now() - t1}ms`);
 
       const t2 = Date.now();
       await sandbox.runCommand("true");
@@ -49,19 +51,19 @@ export async function createNewSandbox(
 
       return sandbox;
     } catch (err) {
-      console.warn("Failed to connect to API sandbox, falling back:", err);
+      console.warn("Snapshot sandbox creation failed, falling back:", err);
     }
   }
 
-  const t2 = Date.now();
+  const t3 = Date.now();
   const sandbox = await Sandbox.create();
-  console.log(`[timing] Sandbox.create (fallback): ${Date.now() - t2}ms`);
+  console.log(`[timing] Sandbox.create (fresh): ${Date.now() - t3}ms`);
 
   const files = readSourceFiles(agentDataDir);
   if (files.length > 0) {
-    const t3 = Date.now();
+    const t4 = Date.now();
     await sandbox.writeFiles(files);
-    console.log(`[timing] writeFiles (fallback): ${Date.now() - t3}ms`);
+    console.log(`[timing] writeFiles: ${Date.now() - t4}ms`);
   }
 
   return sandbox;
