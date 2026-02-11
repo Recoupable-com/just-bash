@@ -1,9 +1,9 @@
 import { ToolLoopAgent, createAgentUIStreamResponse, stepCountIs } from "ai";
 import { createBashTool } from "bash-tool";
-import { Sandbox } from "@vercel/sandbox";
-import { readdirSync, readFileSync } from "fs";
-import { dirname, join, relative } from "path";
+import { dirname, join } from "path";
 import { fileURLToPath } from "url";
+import { createSandbox } from "../_lib/createSandbox";
+import { readSourceFiles } from "../_lib/readSourceFiles";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const AGENT_DATA_DIR = join(__dirname, "./_agent-data");
@@ -36,35 +36,6 @@ Use cat to read files. Use head, tail to read parts of large files.
 
 Keep responses concise. You have access to a full Linux environment with standard tools.`;
 
-/**
- * Recursively read all files from a directory, returning them in the format
- * expected by Sandbox.writeFiles().
- */
-function readSourceFiles(
-  dir: string,
-  baseDir?: string
-): Array<{ path: string; content: Buffer }> {
-  const base = baseDir ?? dir;
-  const files: Array<{ path: string; content: Buffer }> = [];
-
-  for (const entry of readdirSync(dir, { withFileTypes: true })) {
-    const fullPath = join(dir, entry.name);
-    if (entry.isDirectory()) {
-      // Skip node_modules and other large/irrelevant dirs
-      if (entry.name === "node_modules" || entry.name === ".git") continue;
-      files.push(...readSourceFiles(fullPath, base));
-    } else {
-      const relPath = relative(base, fullPath);
-      files.push({
-        path: join(SANDBOX_CWD, relPath),
-        content: readFileSync(fullPath),
-      });
-    }
-  }
-
-  return files;
-}
-
 export async function POST(req: Request) {
   const authHeader = req.headers.get("Authorization");
   if (!authHeader?.startsWith("Bearer ")) {
@@ -80,14 +51,10 @@ export async function POST(req: Request) {
     .pop();
   console.log("Prompt:", lastUserMessage?.parts?.[0]?.text);
 
-  const sandbox = await Sandbox.create();
+  const files = readSourceFiles(AGENT_DATA_DIR, SANDBOX_CWD);
+  const sandbox = await createSandbox(files);
 
   try {
-    // Upload source files so the agent can explore them
-    const files = readSourceFiles(AGENT_DATA_DIR);
-    if (files.length > 0) {
-      await sandbox.writeFiles(files);
-    }
 
     const bashToolkit = await createBashTool({
       sandbox,

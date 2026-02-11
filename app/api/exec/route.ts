@@ -1,29 +1,32 @@
 import { Sandbox } from "@vercel/sandbox";
+import { createSandbox } from "../_lib/createSandbox";
 
 const SANDBOX_CWD = "/home/user";
 
-async function createAndSeedSandbox(): Promise<Sandbox> {
-  const sandbox = await Sandbox.create();
+async function fetchSourceFiles(): Promise<
+  Array<{ path: string; content: Buffer }>
+> {
+  const baseUrl = process.env.VERCEL_URL
+    ? `https://${process.env.VERCEL_URL}`
+    : "http://localhost:3000";
+  const res = await fetch(`${baseUrl}/api/fs`);
+  if (!res.ok) return [];
+  const filesMap: Record<string, string> = await res.json();
+  return Object.entries(filesMap).map(([path, content]) => ({
+    path: `${SANDBOX_CWD}/${path}`,
+    content: Buffer.from(content),
+  }));
+}
 
-  // Seed sandbox with source files from the fs API
+async function createAndSeedSandbox(): Promise<Sandbox> {
+  let files: Array<{ path: string; content: Buffer }> = [];
   try {
-    const baseUrl = process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : "http://localhost:3000";
-    const res = await fetch(`${baseUrl}/api/fs`);
-    if (res.ok) {
-      const filesMap: Record<string, string> = await res.json();
-      const files = Object.entries(filesMap).map(([path, content]) => ({
-        path: `${SANDBOX_CWD}/${path}`,
-        content: Buffer.from(content),
-      }));
-      if (files.length > 0) {
-        await sandbox.writeFiles(files);
-      }
-    }
+    files = await fetchSourceFiles();
   } catch {
-    // File seeding is best-effort — sandbox still works without files
+    // File seeding is best-effort
   }
+
+  const sandbox = await createSandbox(files);
 
   // Create convenience copies of top-level demo files
   try {
