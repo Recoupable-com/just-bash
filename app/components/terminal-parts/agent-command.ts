@@ -1,6 +1,11 @@
-import { defineCommand } from "just-bash/browser";
 import { MAX_TOOL_OUTPUT_LINES } from "./constants";
 import { formatMarkdown } from "./markdown";
+
+type ExecResult = {
+  stdout: string;
+  stderr: string;
+  exitCode: number;
+};
 
 type UIMessage = {
   id: string;
@@ -17,15 +22,14 @@ function formatForTerminal(text: string): string {
   return text.replace(/\t/g, "  ").replace(/\r?\n/g, "\r\n");
 }
 
-export function createAgentCommand(
+export function createAgentHandler(
   term: TerminalWriter,
   getAccessToken: () => Promise<string | null>,
-) {
+): (prompt: string) => Promise<ExecResult> {
   const agentMessages: UIMessage[] = [];
   let messageIdCounter = 0;
 
-  const agentCmd = defineCommand("agent", async (args) => {
-    const prompt = args.join(" ");
+  return async (prompt: string): Promise<ExecResult> => {
     if (!prompt) {
       return {
         stdout: "",
@@ -335,7 +339,5 @@ export function createAgentCommand(
         exitCode: 1,
       };
     }
-  });
-
-  return agentCmd;
+  };
 }

@@ -1,23 +1,17 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { Bash } from "just-bash/browser";
-import { getTerminalData } from "./TerminalData";
 import {
-  createStaticCommands,
-  createAgentCommand,
+  CMD_ABOUT,
+  CMD_INSTALL,
+  CMD_GITHUB,
+} from "./terminal-content";
+import {
+  createAgentHandler,
   createInputHandler,
   showWelcome,
 } from "./terminal-parts";
 import { LiteTerminal } from "./lite-terminal";
-
-async function fetchFiles(bash: Bash) {
-  const response = await fetch("/api/fs");
-  const files: Record<string, string> = await response.json();
-  for (const [path, content] of Object.entries(files)) {
-    bash.writeFile(path, content);
-  }
-}
 
 function getTheme(isDark: boolean) {
   return {
@@ -29,6 +23,19 @@ function getTheme(isDark: boolean) {
     brightBlack: isDark ? "#666" : "#525252",
   };
 }
+
+type ExecResult = {
+  stdout: string;
+  stderr: string;
+  exitCode: number;
+};
+
+// Static commands handled client-side (no sandbox needed)
+const staticCommands: Record<string, () => ExecResult> = {
+  about: () => ({ stdout: CMD_ABOUT, stderr: "", exitCode: 0 }),
+  install: () => ({ stdout: CMD_INSTALL, stderr: "", exitCode: 0 }),
+  github: () => ({ stdout: CMD_GITHUB, stderr: "", exitCode: 0 }),
+};
 
 export default function TerminalComponent({
   getAccessToken,
@@ -49,31 +56,83 @@ export default function TerminalComponent({
     });
     term.open(container);
 
-    // Create commands
-    const { aboutCmd, installCmd, githubCmd } = createStaticCommands();
-    const agentCmd = createAgentCommand(term, getAccessToken);
+    // Agent handler
+    const agentHandler = createAgentHandler(term, getAccessToken);
 
-    // Files from DOM
-    const files = {
-      "/home/user/README.md": getTerminalData("file-readme"),
-      "/home/user/LICENSE": getTerminalData("file-license"),
-      "/home/user/package.json": getTerminalData("file-package-json"),
-      "/home/user/AGENTS.md": getTerminalData("file-agents-md"),
-      "/home/user/wtf-is-this.md": getTerminalData("file-wtf-is-this"),
-      "/home/user/dirs/are/fun/author/info.txt": "https://x.com/cramforce\n",
+    // Sandbox session ID (persisted across commands)
+    let sandboxId: string | null = null;
+
+    // Unified exec function - all commands go through sandbox
+    const exec = async (command: string): Promise<ExecResult> => {
+      const trimmed = command.trim();
+      const firstWord = trimmed.split(/\s+/)[0];
+
+      // Static commands (about, install, github) - no sandbox needed
+      if (firstWord in staticCommands) {
+        return staticCommands[firstWord]();
+      }
+
+      // Agent command - uses its own API endpoint
+      if (firstWord === "agent") {
+        let prompt = trimmed.slice(5).trim();
+        // Strip surrounding quotes
+        if (
+          (prompt.startsWith('"') && prompt.endsWith('"')) ||
+          (prompt.startsWith("'") && prompt.endsWith("'"))
+        ) {
+          prompt = prompt.slice(1, -1);
+        }
+        return agentHandler(prompt);
+      }
+
+      // All other commands → sandbox
+      const token = await getAccessToken();
+      if (!token) {
+        return {
+          stdout: "",
+          stderr: "Error: Not authenticated. Please log in and try again.\n",
+          exitCode: 1,
+        };
+      }
+
+      try {
+        const res = await fetch("/api/exec", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ command: trimmed, sandboxId }),
+        });
+
+        if (!res.ok) {
+          return {
+            stdout: "",
+            stderr: `Error: ${res.status} ${res.statusText}\n`,
+            exitCode: 1,
+          };
+        }
+
+        const result = await res.json();
+        if (result.sandboxId) {
+          sandboxId = result.sandboxId;
+        }
+        return {
+          stdout: result.stdout || "",
+          stderr: result.stderr || "",
+          exitCode: result.exitCode ?? 0,
+        };
+      } catch (error) {
+        return {
+          stdout: "",
+          stderr: `Error: ${error instanceof Error ? error.message : "Unknown error"}\n`,
+          exitCode: 1,
+        };
+      }
     };
 
-    const bash = new Bash({
-      customCommands: [aboutCmd, installCmd, githubCmd, agentCmd],
-      files,
-      cwd: "/home/user",
-    });
-
-    // Set up input handling
-    const inputHandler = createInputHandler(term, bash);
-
-    // Load additional files from API into bash filesystem
-    void fetchFiles(bash);
+    // Set up input handling with unified exec
+    const inputHandler = createInputHandler(term, exec);
 
     // Track cleanup state
     let disposed = false;

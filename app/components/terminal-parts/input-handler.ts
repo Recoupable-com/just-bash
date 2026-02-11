@@ -1,4 +1,3 @@
-import type { Bash } from "just-bash/browser";
 import { track } from "@vercel/analytics";
 import { HISTORY_KEY, MAX_HISTORY } from "./constants";
 import { formatMarkdown } from "./markdown";
@@ -9,6 +8,14 @@ type Terminal = {
   clear: () => void;
   onData: (callback: (data: string) => void) => void;
 };
+
+type ExecResult = {
+  stdout: string;
+  stderr: string;
+  exitCode: number;
+};
+
+type ExecFn = (command: string) => Promise<ExecResult>;
 
 
 // Find the start of the previous word
@@ -47,7 +54,7 @@ function getCompletionContext(cmd: string, cursorPos: number): { prefix: string;
   };
 }
 
-export function createInputHandler(term: Terminal, bash: Bash) {
+export function createInputHandler(term: Terminal, exec: ExecFn) {
   const history: string[] = JSON.parse(
     sessionStorage.getItem(HISTORY_KEY) || "[]"
   );
@@ -198,7 +205,7 @@ export function createInputHandler(term: Terminal, bash: Bash) {
       candidates = commands;
     } else {
       // Complete files from current directory
-      const lsResult = await bash.exec("ls -1");
+      const lsResult = await exec("ls -1");
       candidates = lsResult.stdout
         .split("\n")
         .map((f) => f.trim())
@@ -272,7 +279,7 @@ export function createInputHandler(term: Terminal, bash: Bash) {
     if (trimmed === "clear") {
       term.write("\x1b[2J\x1b[3J\x1b[H");
     } else {
-      const result = await bash.exec(trimmed);
+      const result = await exec(trimmed);
       if (result.stdout)
         term.write(
           formatMarkdown(colorizeUrls(result.stdout)).replace(/\n/g, "\r\n")
