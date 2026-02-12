@@ -1,7 +1,4 @@
-const IS_PROD = process.env.NEXT_PUBLIC_VERCEL_ENV === "production";
-const RECOUP_API_URL = IS_PROD
-  ? "https://recoup-api.vercel.app"
-  : "https://test-recoup-api.vercel.app";
+import { RECOUP_API_URL } from "@/lib/consts";
 
 export async function createSandbox(
   bearerToken: string,
