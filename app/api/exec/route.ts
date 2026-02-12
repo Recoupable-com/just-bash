@@ -1,5 +1,5 @@
 import { Sandbox } from "@vercel/sandbox";
-import { createSandbox } from "../../lib/createSandbox";
+import { createSandbox } from "@/lib/createSandbox";
 
 const SANDBOX_CWD = "/home/user";
 

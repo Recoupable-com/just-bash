@@ -2,8 +2,8 @@ import { ToolLoopAgent, createAgentUIStreamResponse, stepCountIs } from "ai";
 import { createBashTool } from "bash-tool";
 import { dirname, join } from "path";
 import { fileURLToPath } from "url";
-import { createSandbox } from "@/app/lib/createSandbox";
-import { readSourceFiles } from "@/app/lib/readSourceFiles";
+import { createSandbox } from "@/lib/createSandbox";
+import { readSourceFiles } from "@/lib/readSourceFiles";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const AGENT_DATA_DIR = join(__dirname, "./_agent-data");
