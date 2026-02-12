@@ -21,8 +21,7 @@ export function useSetupSandbox() {
         if (!res.ok) return;
 
         const data = await res.json();
-        const sandbox = data.sandboxes?.[0];
-        if (sandbox?.snapshot_id && sandbox?.github_repo) return;
+        if (data.snapshot_id && data.github_repo) return;
 
         fetch(`${RECOUP_API_URL}/api/sandboxes/setup`, {
           method: "POST",
