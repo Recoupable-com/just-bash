@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { usePrivy } from "@privy-io/react-auth";
 import TerminalComponent from "./components/Terminal";
 import { TerminalData } from "./components/TerminalData";
+import { useSetupSandbox } from "./hooks/useSetupSandbox";
 
 const NOSCRIPT_CONTENT = `
      _           _       _               _
@@ -96,6 +97,7 @@ const NOSCRIPT_CONTENT = `
 export default function Home() {
   const [mounted, setMounted] = useState(false);
   const { ready, authenticated, login, getAccessToken } = usePrivy();
+  useSetupSandbox({ getAccessToken, authenticated });
 
   useEffect(() => {
     setMounted(true);
